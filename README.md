@@ -1,15 +1,12 @@
-# osuBancho
+# osuBancho [![AGPL V3 Licence](https://img.shields.io/badge/license-AGPL%20V3-blue.svg)](LICENCE)
 An osu!Bancho server written in C# for fun and educational purposes.
 
 ## Not yet implemented
 - Friends List
 - IRC (Private Message, Channels)
 - User ban
-- Tournament support
 - User report
-
-## How compile
-No has any files in the repository yet to compile..
+- Tournament support
 
 ## Thanks
 - [Aardwolf Rep](https://github.com/JamesDunne/aardwolf) for a part of HttpHost
