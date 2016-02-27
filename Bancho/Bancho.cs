@@ -23,7 +23,7 @@ namespace osuBancho
 #else
         public static bool IsDebug = false;
 #endif
-        public static bool IsRestricted = true;
+        public static bool IsRestricted = false;
         public static CultureInfo CultureInfo;
         public static DateTime ServerStarted;
 
