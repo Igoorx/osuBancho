@@ -36,7 +36,7 @@ namespace osuBancho.Helpers
                         }
                         break;
                 }
-                result.Append(string.Format(@"\x{0:X2}", code));
+                result.Append($@"\x{code:X2}");
             }
             result.Append("\"");
             return result.ToString();

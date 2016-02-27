@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Dynamic;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -74,7 +73,6 @@ namespace osuBancho
                 Console.Error.WriteLine("Failed to connect to the specified MySQL server.");
                 Console.ReadKey(true);
                 Environment.Exit(1);
-                return;
             }
 
             UpdateOnlineNow();
@@ -94,7 +92,7 @@ namespace osuBancho
 
         public static void UpdateOnlineNow()
         {
-            using (IQueryAdapter dbClient = Bancho.DatabaseManager.GetQueryReactor())
+            using (IQueryAdapter dbClient = DatabaseManager.GetQueryReactor())
             {
                 dbClient.SetQuery("UPDATE osu_info SET value=@value WHERE name=@name");
                 dbClient.AddParameter("name", "online_now");

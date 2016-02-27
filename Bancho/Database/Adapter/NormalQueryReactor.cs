@@ -15,7 +15,7 @@ namespace osuBancho.Database.Adapter
         {
             base.command.Dispose();
             base.client.reportDone();
-            GC.SuppressFinalize(this);
+            GC.SuppressFinalize(obj: this);
         }
     }
 }
