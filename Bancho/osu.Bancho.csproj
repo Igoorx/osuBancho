@@ -1,0 +1,123 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{852F7150-0104-48BA-81CE-5BC4AC4A3050}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>osuBancho</RootNamespace>
+    <AssemblyName>osu!Bancho</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>osuBancho.Bancho</StartupObject>
+  </PropertyGroup>
+  <PropertyGroup />
+  <PropertyGroup>
+    <ApplicationIcon>boat.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup />
+  <PropertyGroup>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="MySql.Data">
+      <HintPath>..\DLLs\MySql.Data.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.XML" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Bancho.cs" />
+    <Compile Include="Helpers\CanNotAccessBanchoException.cs" />
+    <Compile Include="IRC\Channels\Channel.cs" />
+    <Compile Include="IRC\Channels\ChannelManager.cs" />
+    <Compile Include="Core\Command.cs" />
+    <Compile Include="Core\Enums\bStatus.cs" />
+    <Compile Include="Core\Enums\DisconnectReason.cs" />
+    <Compile Include="Core\Enums\LoginResult.cs" />
+    <Compile Include="Core\Enums\MatchScoringTypes.cs" />
+    <Compile Include="Core\Enums\MatchTeamTypes.cs" />
+    <Compile Include="Core\Enums\MatchTypes.cs" />
+    <Compile Include="Core\Enums\Mods.cs" />
+    <Compile Include="Core\Enums\MultiSpecialModes.cs" />
+    <Compile Include="Core\Enums\PlayModes.cs" />
+    <Compile Include="Core\Enums\SlotStatus.cs" />
+    <Compile Include="Core\Enums\SlotTeams.cs" />
+    <Compile Include="Core\Enums\UserTags.cs" />
+    <Compile Include="HTTP\HttpAsyncHost.cs" />
+    <Compile Include="IRC\IIRCCommand.cs" />
+    <Compile Include="IRC\Objects\IRCJoin.cs" />
+    <Compile Include="IRC\Objects\bIRCMessage.cs" />
+    <Compile Include="IRC\Objects\IRCPacket.cs" />
+    <Compile Include="IRC\Objects\bIRCQuit.cs" />
+    <Compile Include="Core\Lobby\LobbyManager.cs" />
+    <Compile Include="Core\Lobby\Matches\Match.cs" />
+    <Compile Include="Core\Lobby\Matches\MatchPlayer.cs" />
+    <Compile Include="Core\Players\ModeData.cs" />
+    <Compile Include="Core\Serializables\bIntStr.cs" />
+    <Compile Include="Core\Serializables\bMatchData.cs" />
+    <Compile Include="Core\Serializables\bReplayBuffer.cs" />
+    <Compile Include="Core\Serializables\bSerializable.cs" />
+    <Compile Include="Core\Serializables\bUserInfo.cs" />
+    <Compile Include="Core\Enums\Commands.cs" />
+    <Compile Include="Database\Adapter\NormalQueryReactor.cs" />
+    <Compile Include="Database\Adapter\QueryAdapter.cs" />
+    <Compile Include="Database\DatabaseConnection.cs" />
+    <Compile Include="Database\DatabaseManager.cs" />
+    <Compile Include="Database\Interfaces\IDatabaseClient.cs" />
+    <Compile Include="Database\Interfaces\IQueryAdapter.cs" />
+    <Compile Include="Database\Interfaces\IRegularQueryAdapter.cs" />
+    <Compile Include="Helpers\Extensions.cs" />
+    <Compile Include="Helpers\SerializationReader.cs" />
+    <Compile Include="Helpers\SerializationWriter.cs" />
+    <Compile Include="Helpers\Utils.cs" />
+    <Compile Include="Core\Players\Player.cs" />
+    <Compile Include="Core\Players\PlayerManager.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Core\Serializables\bUserStats.cs" />
+    <Compile Include="Core\Serializables\bUserStatus.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="app.manifest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="boat.ico" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
