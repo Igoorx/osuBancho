@@ -6,7 +6,6 @@ An osu!Bancho server written in C# for fun and educational purposes.
 - IRC (Private Message, Channels)
 - User ban
 - User report
-- Tournament support
 
 ## Thanks
 - [Aardwolf Rep](https://github.com/JamesDunne/aardwolf) for a part of HttpHost
