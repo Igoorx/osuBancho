@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "osu!Bancho", "Bancho\osu!Bancho.csproj", "{852F7150-0104-48BA-81CE-5BC4AC4A3050}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "osuBancho", "Bancho\osuBancho.csproj", "{852F7150-0104-48BA-81CE-5BC4AC4A3050}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
