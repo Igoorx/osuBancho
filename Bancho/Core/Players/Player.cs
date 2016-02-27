@@ -303,7 +303,7 @@ namespace osuBancho.Core.Players
                         }
                         break;
                     case Commands.IN_Logout:
-                        PlayerManager.DisconnectPlayer(this.Id, DisconnectReason.Logout);
+                        PlayerManager.DisconnectPlayer(this, DisconnectReason.Logout);
                         break;
                     case Commands.IN_UNK03:
                         //getlocaluserdata?

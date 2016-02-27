@@ -14,6 +14,7 @@ namespace osuBancho.Core
         BAT = 2,
         Supporter = 4,
         Peppy = 8,
-        Admin = 16
+        Admin = 16,
+        TournamentStaff = 32
     }
 }

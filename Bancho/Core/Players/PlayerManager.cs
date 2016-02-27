@@ -98,15 +98,21 @@ namespace osuBancho.Core.Players
 
             if (!PlayersById.TryAdd(player.Id, player))
             {
-                DisconnectPlayer(player.Id, DisconnectReason.Kick); //TODO?: Use TryUpdate?
-                if (!PlayersById.TryAdd(player.Id, player)) //TODO?: should i implement an temporary ip ban to floods of login?
-                    throw new Exception("Can't disconnect the another player!");
+                if (!player.Tags.HasFlag(UserTags.TournamentStaff) /*&& Bancho.isTourneyMode*/)
+                {
+                    DisconnectPlayer(player.Id, DisconnectReason.Kick); //TODO?: Use TryUpdate?
+                    if (!PlayersById.TryAdd(player.Id, player))
+                        //TODO?: should i implement an temporary ip ban to floods of login?
+                        throw new Exception("Can't disconnect the another player!");
+                }
             }
+            else
+            {
+                //TODO: Improve this?
+                QueueCommandForAll(Commands.UserForLoad, player.Id, player.Id); //NOTE: Osu automatic logout when see that an user with same id has logged in
+            }
+
             PlayersByToken.TryAdd(player.Token, player);
-
-            //TODO: Improve this?
-            QueueCommandForAll(Commands.UserForLoad, player.Id, player.Id); //NOTE: Osu automatic logout when see that an user with same id has logged in
-
             return true;
         }
 
@@ -119,7 +125,19 @@ namespace osuBancho.Core.Players
             player.OnDisconnected();
 
             //TODO: Improve this?
-            QueueCommandForAll((Commands)12, new bIRCQuit(playerId, bIRCQuit.Enum1.const_0));
+            QueueCommandForAll(Commands.OUT_UserQuit, new bIRCQuit(playerId, bIRCQuit.Enum1.const_0));
+
+            Debug.WriteLine("{0} has disconnected ({1})", player.Username, reason);
+        }
+
+        public static void DisconnectPlayer(Player player, DisconnectReason reason)
+        {
+            if (PlayersByToken.TryRemove(player.Token, out player))
+                player.OnDisconnected();
+
+            if (PlayersById.TryRemove(player.Id, out player))
+                //TODO: Improve this?
+                QueueCommandForAll(Commands.OUT_UserQuit, new bIRCQuit(player.Id, bIRCQuit.Enum1.const_0));
 
             Debug.WriteLine("{0} has disconnected ({1})", player.Username, reason);
         }
