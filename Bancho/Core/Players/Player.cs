@@ -35,10 +35,7 @@ namespace osuBancho.Core.Players
         public Player Spectating;
         private readonly ConcurrentDictionary<int, Player> _spectators = new ConcurrentDictionary<int, Player>();
         
-        public IEnumerable<Player> Spectators
-        {
-            get { return _spectators.Select(x=>x.Value); } //.Values; } //TODO: Is this a good way to do this?
-        }
+        public IEnumerable<Player> Spectators => _spectators.Select(x => x.Value);
 
         public Match currentMatch;
         internal bool _matchSkipRequested;
@@ -253,17 +250,23 @@ namespace osuBancho.Core.Players
                     case Commands.IN_IrcMessage:
                         bIRCMessage message = new bIRCMessage(reader);
 
-                        foreach (Player player in PlayerManager.Players) //Only for testing
-                        {
-                            if (player.Id != this.Id)
-                                player.QueueCommand(Commands.OUT_IrcMessage, new bIRCMessage(this.Username, message.Target, message.Message) { int_0 = this.Id });
-                        }
-                       // QueueCommand(Commands.OUT_IrcMessage,
-                       //     new bIRCMessage("BanchoBot", message.Target, "RECEIVED") {int_0 = -3});
+                        PlayerManager.QueueCommandForAll(Commands.OUT_IrcMessage, new bIRCMessage(this.Username, message.Target, message.Message) { int_0 = this.Id }, 
+                                                         exclude:this.Id);
+
+                        // QueueCommand(Commands.OUT_IrcMessage,
+                        //     new bIRCMessage("BanchoBot", message.Target, "RECEIVED") {int_0 = -3});
 
 
                         //TODO: Better command parse
-                        //TODO: Add command to restart bancho using proper packet
+                        if (message.Message == "!sendbanchorestart")
+                        {
+                            const int delay = 20000;
+                            PlayerManager.QueueCommandForAll(Commands.const_86, delay);
+                        }
+                        if (message.Message == "!closeosu")
+                        {
+                            this.QueueCommand(Commands.OUT_Ping, 0); //lol, i can use this for ban
+                        }
                         if (message.Message == "!togglelock")
                         {
                             this.currentMatch.SetLocked(!this.currentMatch.Locked);

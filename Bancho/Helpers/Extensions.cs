@@ -61,7 +61,7 @@ namespace osuBancho.Helpers
                     Array.Resize(ref bffer, bffer.Length * 2);
             }
 
-            Array.Resize(ref bffer, totalCount); //TODO: is this right? O_o
+            Array.Resize(ref bffer, totalCount); //is this right? O_o
             return bffer;
         }
 
