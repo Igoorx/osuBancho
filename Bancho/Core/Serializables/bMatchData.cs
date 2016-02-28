@@ -114,10 +114,7 @@ namespace osuBancho.Core.Serializables
             }
         }
 
-        public bool HasPassword
-        {
-            get { return gamePassword != null; }
-        }
+        public bool HasPassword => gamePassword != null;
 
         public void ReadFromStream(SerializationReader reader)
         {

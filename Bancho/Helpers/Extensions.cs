@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.CompilerServices;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using osuBancho.Core;
@@ -14,12 +13,7 @@ namespace osuBancho.Helpers
         public static string InsertHrefInUrls(this String input)
         {
             MatchCollection matches = Regex.Matches(input, @"(http|https)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?");
-            foreach (Match match in matches)
-            {
-                string value = match.Value;
-                input = input.Replace(value, string.Format("<a href=\"{0}\">{1}</a>", value, value));
-            }
-            return input;
+            return (from Match match in matches select match.Value).Aggregate(input, (current, value) => current.Replace(value, string.Format("<a href=\"{0}\">{1}</a>", value, value)));
         }
 
         private static string Join(this IEnumerable<string> source)

@@ -30,7 +30,7 @@ namespace osuBancho.Core
 
         public override string ToString()
         {
-            return string.Format("Id: {0}, {1}", Id.ToString(), this.Serializable != null ? this.Serializable.GetType().Name : this.RegularType.GetType().Name);
+            return $"Id: {Id.ToString()}, {this.Serializable?.GetType().Name ?? this.RegularType.GetType().Name}";
         }
     }
 }

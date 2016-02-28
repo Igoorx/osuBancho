@@ -51,8 +51,8 @@ namespace osuBancho.Core.Players
             Id = (int)dbRow["id"];
             Username = (string)dbRow["username"];
             Tags = (UserTags)(int)dbRow["tags"];
-            currentMode = (PlayModes)(SByte)dbRow["last_played_mode"];
-            CountryId = 0/*BR:31*/; //TODO: How get country id?
+            currentMode = (PlayModes)(sbyte)dbRow["last_played_mode"];
+            CountryId = 0/*BR:31*/; //TODO: How get country id? a: maybe make an array - raple
         }
 
         public void QueueCommand(Commands command, object serializable)
@@ -152,27 +152,16 @@ namespace osuBancho.Core.Players
         }
         //TODO: Should do modedata loading and etc related in another class?
 
-        public bUserStats SerializableStats
-        {
-            get
-            {
-                return new bUserStats(this.Id, this.Status, this.currentModeData.TotalScore,
-                    this.currentModeData.Accuracy,
-                    (int) this.currentModeData.PlayCount, this.currentModeData.RankedScore,
-                    (int) this.currentModeData.RankPosition, this.currentModeData.PerformancePoints);
-            }
-        }
+        public bUserStats SerializableStats => new bUserStats(this.Id, this.Status, this.currentModeData.TotalScore,
+            this.currentModeData.Accuracy,
+            (int) this.currentModeData.PlayCount, this.currentModeData.RankedScore,
+            (int) this.currentModeData.RankPosition, this.currentModeData.PerformancePoints);
+
         //NOTE: The way that i do the userstats seems very wrong, i should fix this...
 
-        public ModeData currentModeData
-        {
-            get { return this.ModesDatas[(int) this.currentMode]; }
-        }
+        public ModeData currentModeData => this.ModesDatas[(int) this.currentMode];
 
-        public bool IsMultiplaying
-        {
-            get { return this.Status.status == bStatus.Multiplaying; }
-        }
+        public bool IsMultiplaying => this.Status.status == bStatus.Multiplaying;
 
         public void AddSpectator(Player spectator)
         {
@@ -227,10 +216,8 @@ namespace osuBancho.Core.Players
 
         public void OnDisconnected()
         {
-            if (this.Spectating != null)
-                this.Spectating.RemoveSpectator(this.Id);
-            if (this.currentMatch != null)
-                this.currentMatch.RemovePlayer(this.Id);
+            this.Spectating?.RemoveSpectator(this.Id);
+            this.currentMatch?.RemovePlayer(this.Id);
             LobbyManager.ExitLobby(this.Id);
         }
 
@@ -345,8 +332,7 @@ namespace osuBancho.Core.Players
                         }
                         break;
                     case Commands.IN_CantSpectate: //No has map
-                        if (this.Spectating == null) break;
-                        this.Spectating.QueueCommand(Commands.OUT_SpectatorCantSpectate, this.Id);
+                        this.Spectating?.QueueCommand(Commands.OUT_SpectatorCantSpectate, this.Id);
                         break;
                     case Commands.IN_IrcMessagePrivate:
                         break; //TODO IrcMessagePrivate

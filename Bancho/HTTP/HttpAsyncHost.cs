@@ -33,10 +33,7 @@ namespace osuBancho.HTTP
             _accepts = accepts*Environment.ProcessorCount;
         }
 
-        public List<string> Prefixes
-        {
-            get { return _listener.Prefixes.ToList(); }
-        }
+        public List<string> Prefixes => _listener.Prefixes.ToList();
 
         public void Run(params string[] uriPrefixes)
         {
@@ -73,7 +70,7 @@ namespace osuBancho.HTTP
                     sem.WaitOne();
 
 #pragma warning disable 4014
-                    _listener.GetContextAsync().ContinueWith(async (t) =>
+                    _listener.GetContextAsync().ContinueWith(async t =>
                     {
                         string errMessage;
 
@@ -123,90 +120,93 @@ namespace osuBancho.HTTP
 
                 var outStream = new MemoryStream();
 
-                Debug.WriteLine("{0} from {1}: {2}", context.Request.HttpMethod, context.Request.RemoteEndPoint.Address,
-                    context.Request.Url.AbsolutePath);
-
-                switch (context.Request.Url.AbsolutePath)
+                if (context.Request.RemoteEndPoint != null)
                 {
-                    case "/":
-                        if (context.Request.HttpMethod == "GET" || context.Request.UserAgent != "osu!")
-                            goto ShowMOTD;
+                    Debug.WriteLine("{0} from {1}: {2}", context.Request.HttpMethod, context.Request.RemoteEndPoint.Address,
+                        context.Request.Url.AbsolutePath);
+
+                    switch (context.Request.Url.AbsolutePath)
+                    {
+                        case "/":
+                            if (context.Request.HttpMethod == "GET" || context.Request.UserAgent != "osu!")
+                                goto ShowMOTD;
                         
-                        context.Response.AddHeader("cho-protocol", Bancho.Protocol.ToString());
-                        context.Response.AddHeader("cho-token", "");
+                            context.Response.AddHeader("cho-protocol", Bancho.Protocol.ToString());
+                            context.Response.AddHeader("cho-token", "");
 
-                        try
-                        {
-                            if (string.IsNullOrEmpty(context.Request.Headers.Get("osu-token")))
+                            try
                             {
-                                //Login
-                                string[] loginContent;
-                                using (var reader = new StreamReader(context.Request.InputStream, Encoding.UTF8))
+                                if (string.IsNullOrEmpty(context.Request.Headers.Get("osu-token")))
                                 {
-                                    loginContent = reader.ReadToEnd().Split('\n');
-                                }
-                                if (loginContent.Length == 4)
-                                {
-                                    var username = loginContent[0];
-                                    Player player;
-                                    if (PlayerManager.AuthenticatePlayer(username, loginContent[1], out player))
+                                    //Login
+                                    string[] loginContent;
+                                    using (var reader = new StreamReader(context.Request.InputStream, Encoding.UTF8))
                                     {
-                                        Debug.WriteLine(username + " has logged in.");
-                                        context.Response.Headers["cho-token"] = player.Token;
-
-                                        //TODO: Parse others login data like UTC, clientHash, clientVersion
-                                        player.IPAddress = context.Request.RemoteEndPoint.Address.ToString();
-                                        player.OnLoggedIn();
-                                        player.SerializeCommands(outStream);
+                                        loginContent = reader.ReadToEnd().Split('\n');
                                     }
-                                    else
+                                    if (loginContent.Length == 4)
                                     {
-                                        Debug.WriteLine(username + " has failed to logged in.");
+                                        var username = loginContent[0];
+                                        Player player;
+                                        if (PlayerManager.AuthenticatePlayer(username, loginContent[1], out player))
+                                        {
+                                            Debug.WriteLine(username + " has logged in.");
+                                            context.Response.Headers["cho-token"] = player.Token;
 
-                                        outStream.WriteLoginResult(LoginResult.Failed);
+                                            //TODO: Parse others login data like UTC, clientHash, clientVersion
+                                            player.IPAddress = context.Request.RemoteEndPoint.Address.ToString();
+                                            player.OnLoggedIn();
+                                            player.SerializeCommands(outStream);
+                                        }
+                                        else
+                                        {
+                                            Debug.WriteLine(username + " has failed to logged in.");
+
+                                            outStream.WriteLoginResult(LoginResult.Failed);
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    MemoryStream ms = new MemoryStream(4096);
+                                    await context.Request.InputStream.CopyToAsync(ms);
+
+                                    //Esse await é util?
+                                    //TODO: Improve this?
+                                    if (!await PlayerManager.OnPacketReceived(context.Request.Headers.Get("osu-token"),
+                                        /*new MemoryStream(context.Request.InputStream.ReadToEnd())*/ ms, outStream))
+                                    {
+                                        context.Response.StatusCode = 403;
                                     }
                                 }
                             }
-                            else
+                            catch (HttpListenerException)
                             {
-                                MemoryStream ms = new MemoryStream(4096);
-                                await context.Request.InputStream.CopyToAsync(ms);
-
-                                //Esse await é util?
-                                //TODO: Improve this?
-                                if (!await PlayerManager.OnPacketReceived(context.Request.Headers.Get("osu-token"),
-                                    /*new MemoryStream(context.Request.InputStream.ReadToEnd())*/ ms, outStream))
-                                {
-                                    context.Response.StatusCode = 403;
-                                }
+                                //ignored
                             }
-                        }
-                        catch (HttpListenerException)
-                        {
-                            //ignored
-                        }
-                        catch (CanNotAccessBanchoException)
-                        {
-                            context.Response.StatusCode = 403;
-                        }
-                        catch (Exception ex)
-                        {
-                            // TODO: better exception handling
-                            Trace.WriteLine(ex.ToString());
+                            catch (CanNotAccessBanchoException)
+                            {
+                                context.Response.StatusCode = 403;
+                            }
+                            catch (Exception ex)
+                            {
+                                // TODO: better exception handling
+                                Trace.WriteLine(ex.ToString());
 
-                            outStream.WriteLoginResult(LoginResult.Error);
-                        }
-                        break;
+                                outStream.WriteLoginResult(LoginResult.Error);
+                            }
+                            break;
 
-                    case "/web/bancho_connect.php": //NOTE: Added for localhost test
-                        byte[] bytes = Encoding.Default.GetBytes("br");
-                        outStream.Write(bytes, 0, bytes.Length);
-                        break;
+                        case "/web/bancho_connect.php": //NOTE: Added for localhost test
+                            byte[] bytes = Encoding.Default.GetBytes("br");
+                            outStream.Write(bytes, 0, bytes.Length);
+                            break;
 
-                    default:
-                ShowMOTD:
-                        outStream.Write(Bancho.MOTD, 0, Bancho.MOTD.Length);
-                        break;
+                        default:
+                            ShowMOTD:
+                            outStream.Write(Bancho.MOTD, 0, Bancho.MOTD.Length);
+                            break;
+                    }
                 }
 
                 if (outStream.Length != 0)

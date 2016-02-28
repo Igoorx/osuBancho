@@ -13,15 +13,9 @@ namespace osuBancho.Core.Lobby
         private static readonly ConcurrentDictionary<int, Match> MatchesById = new ConcurrentDictionary<int, Match>();
         private static int _lastMatchId;
 
-        public static IEnumerable<Player> Players
-        {
-            get { return PlayersById.Select(item => item.Value); } //.Values; } //TODO: Is this a good way to do this?
-        }
+        public static IEnumerable<Player> Players => PlayersById.Select(item => item.Value);  //.Values; } //TODO: Is this a good way to do this?
 
-        public static IEnumerable<Match> Matches
-        {
-            get { return MatchesById.Select(item => item.Value); } //.Values; } //TODO: Is this a good way to do this?
-        }
+        public static IEnumerable<Match> Matches => MatchesById.Select(item => item.Value);  //.Values; } //TODO: Is this a good way to do this?
 
         public static void EnterLobby(Player player)
         {
@@ -66,17 +60,11 @@ namespace osuBancho.Core.Lobby
             }
 
             Match match;
-            if (MatchesById.TryGetValue(id, out match))
-            {
-                if ((string.IsNullOrEmpty(match.MatchData.gamePassword) || match.MatchData.gamePassword == password)
-                    && match.AddPlayer(player))
-                {
-                    player.currentMatch = match;
-                    return true;
-                }
-                return false;
-            }
-            return false;
+            if (!MatchesById.TryGetValue(id, out match)) return false;
+            if ((!string.IsNullOrEmpty(match.MatchData.gamePassword) && match.MatchData.gamePassword != password) ||
+                !match.AddPlayer(player)) return false;
+            player.currentMatch = match;
+            return true;
         }
 
         public static void CreateMatch(Player owner, bMatchData matchData)
@@ -103,12 +91,10 @@ namespace osuBancho.Core.Lobby
         public static void MatchDisposed(int matchId)
         {
             Match match;
-            if (MatchesById.TryRemove(matchId, out match))
+            if (!MatchesById.TryRemove(matchId, out match)) return;
+            foreach (Player player in Players)
             {
-                foreach (Player player in Players)
-                {
-                    player.QueueCommand(Commands.OUT_MatchDisband, matchId);
-                }
+                player.QueueCommand(Commands.OUT_MatchDisband, matchId);
             }
         }
     }

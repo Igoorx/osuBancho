@@ -12,17 +12,11 @@ namespace osuBancho.Core.Lobby.Matches
         public readonly int Id;
         private bMatchData matchData;
 
-        public bMatchData MatchData
-        {
-            get { return matchData; }
-        }
+        public bMatchData MatchData => matchData;
 
         private readonly ConcurrentDictionary<int, Player> _players = new ConcurrentDictionary<int, Player>();
         
-        public IEnumerable<Player> Players
-        {
-            get { return _players.Select(item => item.Value); } //.Values; } //TODO: Is this a good way to do this?
-        }
+        public IEnumerable<Player> Players => _players.Select(item => item.Value);  //.Values; } //TODO: Is this a good way to do this?
 
         //TODO: Do anything better than this, like an MatchPlayer?
         //For now this is fine, i think
@@ -242,9 +236,8 @@ namespace osuBancho.Core.Lobby.Matches
         public void OnPlayerScoreUpdate(int id, bScoreData data)
         {
             data.byte_0 = (byte) this.matchData.GetPlayerSlotPos(id);
-            foreach (Player player in playingPlayers)
+            foreach (Player player in playingPlayers.Where(player => player != null))
             {
-                if (player == null) continue;
                 player.QueueCommand(Commands.OUT_MatchScoreUpdate, data);
             }
         }
@@ -255,9 +248,8 @@ namespace osuBancho.Core.Lobby.Matches
             if (LoadFinishCount < PlayingCount)
                 return;
 
-            foreach (Player player in playingPlayers)
+            foreach (Player player in playingPlayers.Where(player => player != null))
             {
-                if (player == null) continue;
                 player._matchSkipRequested = true;
                 player.QueueCommand(Commands.OUT_MatchAllPlayersLoaded);
             }
@@ -319,11 +311,10 @@ namespace osuBancho.Core.Lobby.Matches
         public void SetReady(bool ready, int playerId)
         {
             int slotPos = matchData.GetPlayerSlotPos(playerId);
-            if (matchData.slotStatus[slotPos] != SlotStatus.NoMap && matchData.slotStatus[slotPos] != SlotStatus.Playing)
-            {
-                matchData.slotStatus[slotPos] = ready ? SlotStatus.Ready : SlotStatus.NotReady;
-                this.SendMatchUpdate();
-            }
+            if (matchData.slotStatus[slotPos] == SlotStatus.NoMap || matchData.slotStatus[slotPos] == SlotStatus.Playing)
+                return;
+            matchData.slotStatus[slotPos] = ready ? SlotStatus.Ready : SlotStatus.NotReady;
+            this.SendMatchUpdate();
         }
 
         public void LockSlot(int slotPos)
