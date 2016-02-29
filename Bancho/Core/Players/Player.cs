@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.ComponentModel.Design;
 using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using osuBancho.Core.Lobby;
 using osuBancho.Core.Lobby.Matches;
 using osuBancho.Core.Serializables;
@@ -52,6 +50,15 @@ namespace osuBancho.Core.Players
             CountryId = 0/*BR:31*/; //TODO: How get country id? a: maybe make an array - raple
         }
 
+        public bool IrcPlayer = false;
+        public Player(DataRow dbRow)
+        {
+            Id = (int)dbRow["id"];
+            Username = (string)dbRow["username"];
+            Tags = (UserTags)(int)dbRow["tags"];
+            IrcPlayer = true;
+        }
+
         public void QueueCommand(Commands command, object serializable)
         {
             CommandQueue.Enqueue(new Command(command, serializable));
@@ -72,15 +79,17 @@ namespace osuBancho.Core.Players
 
         public void SerializeCommands(Stream outStream)
         {
-            SerializationWriter writer = new SerializationWriter(outStream);
+            var writer = new SerializationWriter(outStream);
+
             Command command;
-            long begin;
             while (outStream.Length < 6144L && this.CommandQueue.TryDequeue(out command))
             {
-                begin = writer.BaseStream.Position;
-                writer.Write((short)command.Id);
+                var begin = writer.BaseStream.Position;
+
+                writer.Write(command.Id);
                 writer.Write((byte)0);
-                writer.Write((int)0);
+                writer.Write(0);
+
                 if (command.noHasData) continue;
                 if (command.Serializable != null)
                 {
@@ -90,10 +99,12 @@ namespace osuBancho.Core.Players
                 {
                     writer.method_0(command.RegularType); //TODO: Improve this
                 }
+
                 writer.BaseStream.Position = begin + 3; //this is weird >_>
                 writer.Write((int)(writer.BaseStream.Length - begin) - 7);
                 writer.Seek(0, SeekOrigin.End);
             }
+
             outStream.Position = 0;
         }
 

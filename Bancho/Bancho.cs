@@ -15,7 +15,7 @@ namespace osuBancho
 {
     static class Bancho
     {
-        public static byte[] MOTD = Encoding.Default.GetBytes("<pre>\n" + File.ReadAllText("MOTD.txt").InsertHrefInUrls() + "\n</pre>");
+        public static byte[] MOTD;
         public static byte Protocol = 19;
 #if DEBUG
         public static bool IsDebug = true;
@@ -27,10 +27,7 @@ namespace osuBancho
         public static DateTime ServerStarted;
 
         private static DatabaseManager _databaseManager;
-        public static DatabaseManager DatabaseManager
-        {
-            get { return _databaseManager; }
-        }
+        public static DatabaseManager DatabaseManager => _databaseManager; 
 
         static void Main()
         {
@@ -39,13 +36,18 @@ namespace osuBancho
             if (IsDebug) Console.Write(" in debug mode");
             Console.WriteLine("..");
 
+            if (File.Exists("MOTD.txt"))
+            {
+                MOTD = Encoding.Default.GetBytes($"<pre>\n{File.ReadAllText("MOTD.txt").InsertHrefInUrls()}\n</pre>");
+            }
+
             Process.GetCurrentProcess().PriorityBoostEnabled = true;
             Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.RealTime;
             Thread.CurrentThread.Priority = ThreadPriority.Highest;
             Console.CursorVisible = false;
             Console.Title = "osu!Bancho";
 
-            CultureInfo = CultureInfo.CreateSpecificCulture("en-GB"); //TODO anything with this?
+            CultureInfo = CultureInfo.CreateSpecificCulture("en-GB");
             //TODO config file
 
             Console.WriteLine("Initializing Database..");
@@ -83,9 +85,9 @@ namespace osuBancho
 #endif
 
             Console.WriteLine("Initializing HTTP..");
-            HttpAsyncHost http = new HttpAsyncHost(120);
-            Console.WriteLine("Bancho is UP!");
-            http.Run(new[] { "http://+:890/" });
+            HttpAsyncHost http = new HttpAsyncHost(IsDebug? 1 : 120);
+            Console.WriteLine("Bancho is UP!\n");
+            http.Run("http://+:890/");
 
             Console.ReadLine();
         }

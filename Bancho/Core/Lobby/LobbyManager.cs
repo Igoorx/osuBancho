@@ -13,9 +13,9 @@ namespace osuBancho.Core.Lobby
         private static readonly ConcurrentDictionary<int, Match> MatchesById = new ConcurrentDictionary<int, Match>();
         private static int _lastMatchId;
 
-        public static IEnumerable<Player> Players => PlayersById.Select(item => item.Value);  //.Values; } //TODO: Is this a good way to do this?
+        public static IEnumerable<Player> Players => PlayersById.Select(item => item.Value);
 
-        public static IEnumerable<Match> Matches => MatchesById.Select(item => item.Value);  //.Values; } //TODO: Is this a good way to do this?
+        public static IEnumerable<Match> Matches => MatchesById.Select(item => item.Value);
 
         public static void EnterLobby(Player player)
         {

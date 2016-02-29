@@ -58,9 +58,7 @@ namespace osuBancho.IRC.Objects
             writer.Write(value);
             writer.Write(int_0);
         }
-
-        //TODO: Osu Bancho IRC
-        //TODO: Search for more parts like this!
+        
         public void WriteCommandToStream(SerializationWriter writer)
         {
 /*

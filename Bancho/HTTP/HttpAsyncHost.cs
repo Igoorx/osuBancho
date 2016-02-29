@@ -17,7 +17,7 @@ namespace osuBancho.HTTP
     public sealed class HttpAsyncHost
     {
         private readonly int _accepts;
-        private HttpListener _listener;
+        private readonly HttpListener _listener;
 
         /// <summary>
         /// Creates an asynchronous HTTP host.
@@ -43,7 +43,7 @@ namespace osuBancho.HTTP
             foreach (var prefix in uriPrefixes)
                 _listener.Prefixes.Add(prefix);
 
-            Task.Run(() => //NOTE: Esse task é util?
+            Task.Run(() =>
             {
                 try
                 {
@@ -59,11 +59,7 @@ namespace osuBancho.HTTP
                 // Accept connections:
                 // Higher values mean more connections can be maintained yet at a much slower average response time; fewer connections will be rejected.
                 // Lower values mean less connections can be maintained yet at a much faster average response time; more connections will be rejected.
-#if !DEBUG
                 var sem = new Semaphore(_accepts, _accepts);
-#else
-                var sem = new Semaphore(1, 1); //To no fuck the debug x.x idk if have an better way to do this
-#endif
 
                 while (true)
                 {
@@ -72,31 +68,17 @@ namespace osuBancho.HTTP
 #pragma warning disable 4014
                     _listener.GetContextAsync().ContinueWith(async t =>
                     {
-                        string errMessage;
-
-                        try
-                        {
 #if !DEBUG
-                            sem.Release();
+                        sem.Release();
 #endif
 
-                            var ctx = await t;
-
-                            await ProcessListenerContext(ctx, this);
-
-                            /*Se der problema, fazer um queue para Processar os requests*/
+                        var ctx = await t;
+                        await ProcessListenerContext(ctx, this);
+                        /*Se der problema, fazer um queue para Processar os requests*/
 
 #if DEBUG
-                            sem.Release();
+                        sem.Release();
 #endif
-                            return;
-                        }
-                        catch (Exception ex)
-                        {
-                            errMessage = ex.ToString();
-                        }
-
-                        await Console.Error.WriteLineAsync(errMessage);
                     });
 #pragma warning restore 4014
                 }
@@ -144,6 +126,7 @@ namespace osuBancho.HTTP
                                     {
                                         loginContent = reader.ReadToEnd().Split('\n');
                                     }
+
                                     if (loginContent.Length == 4)
                                     {
                                         var username = loginContent[0];
@@ -171,8 +154,7 @@ namespace osuBancho.HTTP
                                     MemoryStream ms = new MemoryStream(4096);
                                     await context.Request.InputStream.CopyToAsync(ms);
 
-                                    //Esse await é util?
-                                    //TODO: Improve this?
+                                    //CopyToAsync vs ReadToEnd
                                     if (!await PlayerManager.OnPacketReceived(context.Request.Headers.Get("osu-token"),
                                         /*new MemoryStream(context.Request.InputStream.ReadToEnd())*/ ms, outStream))
                                     {
@@ -180,10 +162,7 @@ namespace osuBancho.HTTP
                                     }
                                 }
                             }
-                            catch (HttpListenerException)
-                            {
-                                //ignored
-                            }
+                            catch (HttpListenerException) { /* Ignored */ }
                             catch (CanNotAccessBanchoException)
                             {
                                 context.Response.StatusCode = 403;
@@ -204,7 +183,8 @@ namespace osuBancho.HTTP
 
                         default:
                             ShowMOTD:
-                            outStream.Write(Bancho.MOTD, 0, Bancho.MOTD.Length);
+                            if (Bancho.MOTD!=null)
+                                outStream.Write(Bancho.MOTD, 0, Bancho.MOTD.Length);
                             break;
                     }
                 }
@@ -231,11 +211,7 @@ namespace osuBancho.HTTP
                 context.Response.Close();
                 //TODO: do a way to try resend packets that has failed to send by response.close
             }
-            catch (HttpListenerException)
-            {
-                // Ignored.
-                Debug.WriteLine("HTTP Error");
-            }
+            catch (HttpListenerException) { /* Ignored */ }
             catch (Exception ex)
             {
                 // TODO: better exception handling

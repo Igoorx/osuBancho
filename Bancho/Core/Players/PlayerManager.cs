@@ -145,7 +145,7 @@ namespace osuBancho.Core.Players
             {
                 receivedStream.Position = 0;
                
-                player.OnPacketReceived(receivedStream);
+                await Task.Run(() => player.OnPacketReceived(receivedStream));
                 player.SerializeCommands(outStream);
                 
                 return true;

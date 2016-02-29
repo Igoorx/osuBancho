@@ -16,7 +16,7 @@ namespace osuBancho.Core.Lobby.Matches
 
         private readonly ConcurrentDictionary<int, Player> _players = new ConcurrentDictionary<int, Player>();
         
-        public IEnumerable<Player> Players => _players.Select(item => item.Value);  //.Values; } //TODO: Is this a good way to do this?
+        public IEnumerable<Player> Players => _players.Select(item => item.Value);
 
         //TODO: Do anything better than this, like an MatchPlayer?
         //For now this is fine, i think
@@ -168,7 +168,7 @@ namespace osuBancho.Core.Lobby.Matches
             }
             if (PlayingCount == 0) SetLocked(matchData.inProgress = false);
 
-            //TODO: This sendmatchupdate is useless when a player start the match..
+            //NOTE: This sendmatchupdate is useless when a player start the match..
             this.SendMatchUpdate();
         }
 
@@ -228,8 +228,7 @@ namespace osuBancho.Core.Lobby.Matches
         {
             foreach (Player player in playingPlayers)
             {
-                if (player == null) continue;
-                player.QueueCommand(Commands.OUT_MatchPlayerFailed, this.matchData.GetPlayerSlotPos(id));
+                player?.QueueCommand(Commands.OUT_MatchPlayerFailed, this.matchData.GetPlayerSlotPos(id));
             }
         }
 
@@ -255,49 +254,49 @@ namespace osuBancho.Core.Lobby.Matches
             }
         }
 
-        public void SetMatchData(bMatchData matchData)
+        public void SetMatchData(bMatchData newMatchData)
         {
-            if (matchData.inProgress) return; //NOTE: The game sends an packet to bancho with playing room status when the match end, idk why
+            if (newMatchData.inProgress) return; //NOTE: The game sends an packet to bancho with playing room status when the match end, idk why
 
-            bool toggledToFreeMod = matchData.specialModes != this.matchData.specialModes &&
-                                    matchData.specialModes == MultiSpecialModes.FreeMod;
-            Mods mods = matchData.activeMods;
+            bool toggledToFreeMod = newMatchData.specialModes != this.matchData.specialModes &&
+                                    newMatchData.specialModes == MultiSpecialModes.FreeMod;
+            Mods mods = newMatchData.activeMods;
             if (toggledToFreeMod)
             {
                 if (mods.HasFlag(Mods.DoubleTime))
                 {
                     mods &= ~Mods.DoubleTime;
-                    matchData.activeMods = Mods.DoubleTime;
+                    newMatchData.activeMods = Mods.DoubleTime;
                 }
                 if (mods.HasFlag(Mods.Nightcore))
                 {
                     mods &= ~Mods.Nightcore;
-                    matchData.activeMods = Mods.Nightcore;
+                    newMatchData.activeMods = Mods.Nightcore;
                 }
                 if (mods.HasFlag(Mods.HalfTime))
                 {
                     mods &= ~Mods.HalfTime;
-                    matchData.activeMods = Mods.HalfTime;
+                    newMatchData.activeMods = Mods.HalfTime;
                 }
             }
 
-            bool toggledToTeamMode = matchData.IsTeamMode && !this.matchData.IsTeamMode;
-            bool toggledToNormalMode = !matchData.IsTeamMode && this.matchData.IsTeamMode;
+            bool toggledToTeamMode = newMatchData.IsTeamMode && !this.matchData.IsTeamMode;
+            bool toggledToNormalMode = !newMatchData.IsTeamMode && this.matchData.IsTeamMode;
 
             for (int i = 0; i < bMatchData.MaxRoomPlayers - 1; i++)
             {
-                if (matchData.slotId[i] == -1) continue;
-                if (matchData.slotStatus[i] == SlotStatus.Ready &&
-                    matchData.slotStatus[i] != SlotStatus.NoMap) matchData.slotStatus[i] = SlotStatus.NotReady;
-                if (toggledToFreeMod) matchData.slotMods[i] = mods;
-                if (toggledToTeamMode) matchData.slotTeam[i] = i%2 == 0 ? SlotTeams.Blue : SlotTeams.Red;
-                if (toggledToNormalMode) matchData.slotTeam[i] = SlotTeams.Neutral;
+                if (newMatchData.slotId[i] == -1) continue;
+                if (newMatchData.slotStatus[i] == SlotStatus.Ready &&
+                    newMatchData.slotStatus[i] != SlotStatus.NoMap) newMatchData.slotStatus[i] = SlotStatus.NotReady;
+                if (toggledToFreeMod) newMatchData.slotMods[i] = mods;
+                if (toggledToTeamMode) newMatchData.slotTeam[i] = i%2 == 0 ? SlotTeams.Blue : SlotTeams.Red;
+                if (toggledToNormalMode) newMatchData.slotTeam[i] = SlotTeams.Neutral;
             }
 
-            if (matchData.gamePassword == "") matchData.gamePassword = null;
-            else if (this.matchData.HasPassword) matchData.gamePassword = this.matchData.gamePassword;
+            if (newMatchData.gamePassword == "") newMatchData.gamePassword = null;
+            else if (this.matchData.HasPassword) newMatchData.gamePassword = this.matchData.gamePassword;
 
-            this.matchData = matchData;
+            this.matchData = newMatchData;
             this.SendMatchUpdate();
         }
 

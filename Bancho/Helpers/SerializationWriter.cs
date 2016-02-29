@@ -2,6 +2,10 @@
 using System.Collections.Generic;
 using System.Text;
 
+// ReSharper disable All
+#pragma warning disable 4296
+#pragma warning disable 0162
+
 namespace osuBancho.Helpers
 {
     public class SerializationWriter : System.IO.BinaryWriter

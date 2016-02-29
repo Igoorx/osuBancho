@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using osuBancho.Core;
 
@@ -13,19 +11,7 @@ namespace osuBancho.Helpers
         public static string InsertHrefInUrls(this String input)
         {
             MatchCollection matches = Regex.Matches(input, @"(http|https)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?");
-            return (from Match match in matches select match.Value).Aggregate(input, (current, value) => current.Replace(value, string.Format("<a href=\"{0}\">{1}</a>", value, value)));
-        }
-
-        private static string Join(this IEnumerable<string> source)
-        {
-            var builder = new StringBuilder();
-
-            foreach (var value in source)
-            {
-                builder.Append(value);
-            }
-
-            return builder.ToString();
+            return (from Match match in matches select match.Value).Aggregate(input, (current, value) => current.Replace(value, $"<a href=\"{value}\">{value}</a>"));
         }
 
         public static void Write(this Stream stream, byte[] bytes)
@@ -78,10 +64,7 @@ namespace osuBancho.Helpers
 
             Action<Exception> done = e =>
             {
-                if (onComplete != null)
-                {
-                    onComplete.Invoke(source, destination, e);
-                }
+                onComplete?.Invoke(source, destination, e);
             };
 
             AsyncCallback rc = null;

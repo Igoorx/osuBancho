@@ -74,6 +74,7 @@
     <Compile Include="Core\Enums\UserTags.cs" />
     <Compile Include="HTTP\HttpAsyncHost.cs" />
     <Compile Include="IRC\IIRCCommand.cs" />
+    <Compile Include="IRC\IrcAsyncHost.cs" />
     <Compile Include="IRC\Objects\IRCJoin.cs" />
     <Compile Include="IRC\Objects\bIRCMessage.cs" />
     <Compile Include="IRC\Objects\IRCPacket.cs" />
