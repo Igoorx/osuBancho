@@ -8,17 +8,26 @@ namespace osuBancho.Helpers
 {
     static class Extensions
     {
+        /// <summary>
+        /// Insert HTML Href to all urls in the current <see cref="String"/>.
+        /// </summary>
         public static string InsertHrefInUrls(this String input)
         {
             MatchCollection matches = Regex.Matches(input, @"(http|https)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?");
             return (from Match match in matches select match.Value).Aggregate(input, (current, value) => current.Replace(value, $"<a href=\"{value}\">{value}</a>"));
         }
 
+        /// <summary>
+        /// Write bytes to the current <see cref="Stream"/>.
+        /// </summary>
         public static void Write(this Stream stream, byte[] bytes)
         {
             stream.Write(bytes, 0, bytes.Length);
         }
 
+        /// <summary>
+        /// Read specified bytes count from the current <see cref="Stream"/>.
+        /// </summary>
         public static byte[] Read(this Stream stream, int count)
         {
             byte[] result = new byte[count];
@@ -26,11 +35,17 @@ namespace osuBancho.Helpers
             return result;
         }
 
+        /// <summary>
+        /// Check if the position is in end of the current <see cref="Stream"/>.
+        /// </summary>
         public static bool IsInEnd(this Stream stream)
         {
             return stream.Position == stream.Length;
         }
 
+        /// <summary>
+        /// Read all bytes of the current <see cref="Stream"/>.
+        /// </summary>
         public static byte[] ReadToEnd(this Stream stream)
         {
             byte[] bffer = new byte[1024];
@@ -105,17 +120,25 @@ namespace osuBancho.Helpers
             source.BeginRead(buffer, 0, buffer.Length, rc, null);
         }
 
-
+        /// <summary>
+        /// Read a <see cref="ushort"/> (2 bytes) from the current <see cref="Stream"/>.
+        /// </summary>
         public static ushort ReadUInt16(this Stream stream)
         {
             return (ushort)(stream.ReadByte() | stream.ReadByte() << 8);
         }
 
+        /// <summary>
+        /// Read a <see cref="uint"/> (4 bytes) from the current <see cref="Stream"/>.
+        /// </summary>
         public static uint ReadUInt32(this Stream stream)
         {
             return (uint)(stream.ReadByte() | stream.ReadByte() << 8 | stream.ReadByte() << 16 | stream.ReadByte() << 24);
         }
 
+        /// <summary>
+        /// Write a login result command to the current <see cref="Stream"/>.
+        /// </summary>
         public static void WriteLoginResult(this Stream stream, LoginResult result)
         {
             SerializationWriter obw = new SerializationWriter(stream);
