@@ -36,35 +36,38 @@ namespace osuBancho
             if (IsDebug) Console.Write(" in debug mode");
             Console.WriteLine("..");
 
+            Process.GetCurrentProcess().PriorityBoostEnabled = true;
+            Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.RealTime;
+            Thread.CurrentThread.Priority = ThreadPriority.Highest;
+
+            Console.CursorVisible = false;
+            Console.Title = "osu!Bancho";
+
             if (File.Exists("MOTD.txt"))
             {
                 MOTD = Encoding.Default.GetBytes($"<pre>\n{File.ReadAllText("MOTD.txt").InsertHrefInUrls()}\n</pre>");
             }
 
-            Process.GetCurrentProcess().PriorityBoostEnabled = true;
-            Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.RealTime;
-            Thread.CurrentThread.Priority = ThreadPriority.Highest;
-            Console.CursorVisible = false;
-            Console.Title = "osu!Bancho";
+            if (!File.Exists("config.ini")) File.WriteAllText("config.ini", IniFile.DefaultIni);
+            IniFile ini = new IniFile("config.ini");
 
             CultureInfo = CultureInfo.CreateSpecificCulture("en-GB");
-            //TODO config file
 
             Console.WriteLine("Initializing Database..");
 
             var connectionString = new MySqlConnectionStringBuilder
             {
-                ConnectionTimeout = 10,
-                Database = "osu!",
+                ConnectionTimeout = ini.GetValue("DatabaseConnection", "Timeout", 10u),
+                Database = ini.GetValue("DatabaseConnection", "Database", "osu!"),
                 DefaultCommandTimeout = 30,
                 Logging = false,
-                MaximumPoolSize = 250,
-                MinimumPoolSize = 10,
-                Password = "root",
+                MaximumPoolSize = ini.GetValue("DatabaseConnection", "MaximumPoolSize", 250u),
+                MinimumPoolSize = ini.GetValue("DatabaseConnection", "MinimumPoolSize", 10u),
+                Password = ini.GetValue("DatabaseConnection", "Password", ""),
                 Pooling = true,
-                Port = 3306,
-                Server = "127.0.0.1",
-                UserID = "root",
+                Port = ini.GetValue("DatabaseConnection", "Port", 3306u),
+                Server = ini.GetValue("DatabaseConnection", "Server", "127.0.0.1"),
+                UserID = ini.GetValue("DatabaseConnection", "User", "root"),
                 AllowZeroDateTime = true,
                 ConvertZeroDateTime = true,
             };
@@ -86,8 +89,7 @@ namespace osuBancho
 
             Console.WriteLine("Initializing HTTP..");
             HttpAsyncHost http = new HttpAsyncHost(IsDebug? 1 : 120);
-            Console.WriteLine("Bancho is UP!\n");
-            http.Run("http://+:890/");
+            http.Run("http://+:"+ini.GetValue("Bancho", "Port", "80")+"/");
 
             Console.ReadLine();
         }

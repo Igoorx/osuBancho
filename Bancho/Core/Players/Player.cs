@@ -215,7 +215,7 @@ namespace osuBancho.Core.Players
 
             //BUG: cant click in BanchoBot on his messages
             QueueCommand(Commands.OUT_IrcMessage,
-                new bIRCMessage("BanchoBot", "#osu", $"Welcome to the bancho {this.Username}!") {SenderId = -3}); //NOTE: This is a test message
+                new bIRCMessage("BanchoBot", "#osu", "Welcome to the Bancho!") {SenderId = -3}); //NOTE: This is a test message
         }
 
         public void OnDisconnected()
@@ -472,10 +472,13 @@ namespace osuBancho.Core.Players
                         //NOTE: idk what is
                         break;
                     case Commands.IN_AwayMessage:
+                        //TODO: AwayMessage
                         break;
                     case Commands.IN_FriendAdd:
+                        //TODO: FriendAdd
                         break;
                     case Commands.IN_FriendRemove:
+                        //TODO: FriendRemove
                         break;
                     case Commands.IN_InvitePlayer:
                     {

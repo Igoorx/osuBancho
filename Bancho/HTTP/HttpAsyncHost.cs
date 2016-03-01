@@ -50,11 +50,18 @@ namespace osuBancho.HTTP
                     // Start the HTTP listener:
                     _listener.Start();
                 }
-                catch (HttpListenerException hlex)
+                catch (HttpListenerException hlex) when (hlex.ErrorCode == 32)
                 {
-                    Console.Error.WriteLine(hlex.Message);
+                    Console.Error.WriteLine("The desired port for the Bancho is in use.");
                     return;
                 }
+                catch (HttpListenerException hlex)
+                {
+                    Console.Error.WriteLine(hlex.ErrorCode+": "+hlex.Message);
+                    return;
+                }
+
+                Console.WriteLine("Bancho is UP!\n");
 
                 // Accept connections:
                 // Higher values mean more connections can be maintained yet at a much slower average response time; fewer connections will be rejected.
