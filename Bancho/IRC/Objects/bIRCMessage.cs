@@ -6,7 +6,7 @@ namespace osuBancho.IRC.Objects
 {
     internal sealed class bIRCMessage : bSerializable, IIRCCommand
     {
-        public int int_0;
+        public int SenderId;
         public string Message;
         public object Source;
         public string Target;
@@ -30,7 +30,7 @@ namespace osuBancho.IRC.Objects
             Target = reader.ReadString();
             if (Bancho.Protocol > 14)
             {
-                int_0 = reader.ReadInt32();
+                SenderId = reader.ReadInt32();
             }
         }
 
@@ -56,7 +56,7 @@ namespace osuBancho.IRC.Objects
                 }
             }
             writer.Write(value);
-            writer.Write(int_0);
+            writer.Write(SenderId);
         }
         
         public void WriteCommandToStream(SerializationWriter writer)

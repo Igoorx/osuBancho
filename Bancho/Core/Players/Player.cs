@@ -204,10 +204,10 @@ namespace osuBancho.Core.Players
                 new Command(Commands.OUT_FriendsList, new[] {2,3}), //TODO: Friendslist
                 new Command(Commands.OUT_Announcement,
                     "http://puu.sh/jh7t7/20c04029ad.png|https://osu.ppy.sh/news/123912240253"),
-                new Command(Commands.UpdateUserInfo,
+                new Command(Commands.OUT_UpdateUserInfo,
                     new bUserInfo(this.Id, this.Username, this.TimeZone, (byte)this.CountryId, UserTags.Player, PlayModes.Osu, 1f, 1f, 1)),
                 new Command(Commands.OUT_UpdateUserState, this.SerializableStats),
-                new Command(Commands.UpdateUserInfo,
+                new Command(Commands.OUT_UpdateUserInfo,
                     new bUserInfo(-3, "BanchoBot", 0, 0, UserTags.None, PlayModes.Osu, 0, 0, 0))
             });
 
@@ -215,11 +215,7 @@ namespace osuBancho.Core.Players
 
             //BUG: cant click in BanchoBot on his messages
             QueueCommand(Commands.OUT_IrcMessage,
-                new bIRCMessage("BanchoBot", "#osu", "Welcome to the osu!p :)") {int_0 = -3});
-            QueueCommand(Commands.OUT_IrcMessage,
-                new bIRCMessage("BanchoBot", "#osu", "Click [http://google.com.br/ here] to see news") {int_0 = -3});
-            QueueCommand(Commands.OUT_IrcMessage,
-                new bIRCMessage("BanchoBot", "#osu", "Click [http://google.com.br/ here] to see changelog") { int_0 = -3 });
+                new bIRCMessage("BanchoBot", "#osu", $"Welcome to the bancho {this.Username}!") {SenderId = -3}); //NOTE: This is a test message
         }
 
         public void OnDisconnected()
@@ -234,7 +230,6 @@ namespace osuBancho.Core.Players
             while (!receivedStream.IsInEnd())
             {
                 Commands command = (Commands) receivedStream.ReadUInt16();
-                
                 receivedStream.Position += 1;
                 uint cmdLen = receivedStream.ReadUInt32();
                 if (cmdLen > receivedStream.Length - receivedStream.Position)
@@ -261,46 +256,37 @@ namespace osuBancho.Core.Players
                     case Commands.IN_IrcMessage:
                         bIRCMessage message = new bIRCMessage(reader);
 
-                        PlayerManager.QueueCommandForAll(Commands.OUT_IrcMessage, new bIRCMessage(this.Username, message.Target, message.Message) { int_0 = this.Id }, 
-                                                         exclude:this.Id);
-
-                        // QueueCommand(Commands.OUT_IrcMessage,
-                        //     new bIRCMessage("BanchoBot", message.Target, "RECEIVED") {int_0 = -3});
-
-
+                        PlayerManager.QueueCommandForAll(Commands.OUT_IrcMessage, new bIRCMessage(this.Username, message.Target, message.Message) { SenderId = this.Id }, 
+                                                         exclude: this.Id);
+                        
                         //TODO: Better command parse
-                        if (message.Message == "!sendbanchorestart")
+                        switch (message.Message)
                         {
-                            const int delay = 20000;
-                            PlayerManager.QueueCommandForAll(Commands.const_86, delay);
-                        }
-                        if (message.Message == "!closeosu")
-                        {
-                            this.QueueCommand(Commands.OUT_Ping, 0); //lol, i can use this for ban
-                        }
-                        if (message.Message == "!togglelock")
-                        {
-                            this.currentMatch.SetLocked(!this.currentMatch.Locked);
-                        }
-                        if (message.Message == "!abort")
-                        {
-                            this.currentMatch.FinishMatch(true);
-                        }
-                        if (message.Message == "!start")
-                        {
-                            this.currentMatch.StartMatch();
-                        }
-                        if (message.Message == "!givemehost")
-                        {
-                            this.currentMatch.SetHost(this);
-                        }
-                        if (message.Message == "!targetmod")
-                        {
-                            this.currentMatch.SetMods(Mods.Target);
-                        }
-                        if (message.Message == "!automod")
-                        {
-                            this.currentMatch.SetMods(Mods.Autoplay); //does nothing >_>
+                            case "!sendbanchorestart":
+                                const int delay = 20000;
+                                PlayerManager.QueueCommandForAll(Commands.const_86, delay);
+                                break;
+                            case "!closeosu":
+                                this.QueueCommand(Commands.OUT_Ping, 0); //lol, i can use this for ban
+                                break;
+                            case "!togglelock":
+                                this.currentMatch.SetLocked(!this.currentMatch.Locked);
+                                break;
+                            case "!abort":
+                                this.currentMatch.FinishMatch(true);
+                                break;
+                            case "!start":
+                                this.currentMatch.StartMatch();
+                                break;
+                            case "!givemehost":
+                                this.currentMatch.SetHost(this);
+                                break;
+                            case "!targetmod":
+                                this.currentMatch.SetMods(Mods.Target);
+                                break;
+                            case "!automod":
+                                this.currentMatch.SetMods(Mods.Autoplay); //does nothing in gameplay >_>
+                                break;
                         }
                         break;
                     case Commands.IN_Logout:
@@ -309,23 +295,30 @@ namespace osuBancho.Core.Players
                     case Commands.IN_UNK03:
                         //getlocaluserdata?
                         //getallplayerstoload?
-                        QueueCommand(Commands.LUserForLoad, PlayerManager.PlayersIds.ToArray()); //TODO: Improve?
+                        //what the hell is this?
+
+                        QueueCommand(Commands.OUT_UserForLoadBundle, PlayerManager.PlayersIds.ToArray()); //TODO: Improve?
                         break;
                     case Commands.IN_HeartBit:
                         break; //Do anything with this?
-                    case Commands.IN_SpectatePlayer: //TODO Spectator channel
+                    case Commands.IN_SpectatePlayer:
                     {
                         Player player = PlayerManager.GetPlayerById(reader.ReadInt32());
                         if (player == null) break;
+
                         if (this.Spectating != null)
                         {
                             if (this.Spectating.Id == player.Id) break;
                             this.Spectating.RemoveSpectator(this.Id);
                             this.Spectating = null;
                         }
-                        player.AddSpectator(this);
-                        Spectating = player;
-                        break;
+                        else
+                        {
+                            player.AddSpectator(this);
+                            Spectating = player;
+                        }
+                        //TODO: Spectator channel
+                            break;
                     }
                     case Commands.IN_StopSpectate:
                         if (this.Spectating == null) break;
@@ -334,7 +327,6 @@ namespace osuBancho.Core.Players
                         break;
                     case Commands.IN_SpectateFrames:
                         var replay = new bReplayBuffer(reader);
-                        Debug.WriteLine(replay.enum0_0);
                         
                         foreach (Player spectator in this.Spectators)
                         {
@@ -349,7 +341,8 @@ namespace osuBancho.Core.Players
                         this.Spectating?.QueueCommand(Commands.OUT_SpectatorCantSpectate, this.Id);
                         break;
                     case Commands.IN_IrcMessagePrivate:
-                        break; //TODO IrcMessagePrivate
+                        //TODO: IrcMessagePrivate
+                        break;
                     case Commands.IN_LobbyPart:
                         LobbyManager.ExitLobby(this.Id);
                         break;
@@ -364,7 +357,7 @@ namespace osuBancho.Core.Players
                         if (!LobbyManager.TryEnterMatch(this, intstr.@int, intstr.str))
                             QueueCommand(Commands.OUT_MatchJoinFail);
                         break;
-                    case Commands.IN_MatchLeave: //Is this right?
+                    case Commands.IN_MatchLeave: 
                         if (this.currentMatch!=null)
                             currentMatch.RemovePlayer(this.Id);
                         break;
@@ -444,24 +437,22 @@ namespace osuBancho.Core.Players
                         if (this.currentMatch != null && this.currentMatch.IsHost(this.Id))
                             currentMatch.SetHost(reader.ReadInt32());
                         break;
-                    case Commands.GetUsersStats:
+                    case Commands.IN_GetUsersStats:
                     {
                         //To get status list?
                         int[] playerList = reader.ReadInts();
                         foreach (var playerId in playerList)
                         {
                             if (playerId == this.Id) continue;
-
                             Player player = PlayerManager.GetPlayerById(playerId);
+
                             if (player != null)
                                 QueueCommand(Commands.OUT_UpdateUserState,
                                     player.SerializableStats);
-                            //else
-                            //    QueueCommand(Commands.UserExits, playerId); //BUG: This disconnect BanchoBot
                         }
                         break;
                     }
-                    case Commands.GetUsersInfo:
+                    case Commands.IN_GetUsersInfo:
                     {
                         //To Load Player List?
                         int[] playerList = reader.ReadInts();
@@ -469,7 +460,7 @@ namespace osuBancho.Core.Players
                         {
                             Player player = PlayerManager.GetPlayerById(playerId);
                             if (player != null)
-                                QueueCommand(Commands.UpdateUserInfo,
+                                QueueCommand(Commands.OUT_UpdateUserInfo,
                                     new bUserInfo(player.Id, player.Username, player.TimeZone, (byte) player.CountryId,
                                         player.Tags, player.currentMode, 0, 0, 1));
                             else
@@ -477,23 +468,27 @@ namespace osuBancho.Core.Players
                         }
                         break;
                     }
-                    //case Commands.const_79: //received when first open the bancho idk what is
-                    //    break;
+                    case Commands.const_79:
+                        //NOTE: idk what is
+                        break;
+                    case Commands.IN_AwayMessage:
+                        break;
+                    case Commands.IN_FriendAdd:
+                        break;
+                    case Commands.IN_FriendRemove:
+                        break;
                     case Commands.IN_InvitePlayer:
                     {
-                        Player player = PlayerManager.GetPlayerById(reader.ReadInt32());
-                        if (player == null) break;
-                        bIRCMessage iC = new bIRCMessage(this.Username, "",
-                            "Come join my multiplayer match: [osump://" + this.currentMatch.MatchData.matchId + "/ " +
-                            this.currentMatch.MatchData.gameName + "]") {int_0 = this.Id};
-                        player.QueueCommand(Commands.OUT_IrcMessagePrivate, iC);
+                        Player player = PlayerManager.GetPlayerById(reader.ReadInt32()); 
+                        //TODO: Send using IRC
+                        player?.QueueCommand(Commands.OUT_IrcMessagePrivate, new bIRCMessage(this.Username, "",
+                            $"Come join my multiplayer match: [osump://{this.currentMatch.MatchData.matchId}/ {this.currentMatch.MatchData.gameName}]")
+                            { SenderId = this.Id });
                         break;
                     }
                     case Commands.const_98:
-                        //Contant: GameBase.GameTime
-                        //An packet that is received apparently when more than 256 users are sended by UserForLoad
-                        QueueCommand(Commands.OUT_IrcMessage,
-                            new bIRCMessage("BanchoBot", "#osu", "PACKET 98 RECEIVED = " + reader.ReadInt32().ToString()) { int_0 = -3 });
+                        //Content: GameBase.GameTime
+                        //NOTE: This is an packet that is received apparently when more than 256 users are sended by UserForLoad
                         break;
                     default:
                         Debug.WriteLine("Undefined command: {0} [{1}]", command.ToString().Split('_')[1],

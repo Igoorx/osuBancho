@@ -100,7 +100,7 @@ namespace osuBancho.Core.Players
             else
             {
                 //TODO: Improve this?
-                QueueCommandForAll(Commands.UserForLoad, player.Id, player.Id); //NOTE: Osu automatic logout when see that an user with same id has logged in
+                QueueCommandForAll(Commands.OUT_UserForLoad, player.Id, player.Id); //NOTE: Osu automatic logout when see that an user with same id has logged in
             }
 
             PlayersByToken.TryAdd(player.Token, player);

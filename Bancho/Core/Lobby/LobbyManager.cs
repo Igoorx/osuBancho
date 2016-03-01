@@ -75,8 +75,13 @@ namespace osuBancho.Core.Lobby
                 owner.currentMatch = null;
             }
 
-            Match match = new Match(_lastMatchId++, owner, matchData);
-            MatchesById.TryAdd(match.Id, match);
+            //NOTE: _lastMatchId isn't safe 
+            Match match = new Match(++_lastMatchId, owner, matchData);
+            if (!MatchesById.TryAdd(match.Id, match))
+            {
+                match.Dispose(true);
+                return;
+            }
             owner.currentMatch = match;
 
             foreach (Player player in Players)
