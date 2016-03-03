@@ -17,33 +17,24 @@ namespace osuBancho.Core.Players
         private static readonly ConcurrentDictionary<string, Player> PlayersByToken = new ConcurrentDictionary<string, Player>();
         private static readonly ConcurrentDictionary<int, Player> PlayersById = new ConcurrentDictionary<int, Player>();
 
-        public static IEnumerable<int> PlayersIds
-        {
-            get { return PlayersById.Select(item => item.Key); } //.Keys; } //TODO: Is this a good way to do this?
-        }
+        public static IEnumerable<int> PlayersIds => PlayersById.Select(item => item.Key);
 
-        public static IEnumerable<Player> Players
-        {
-            get { return PlayersById.Select(item => item.Value); } //.Values; } //TODO: Is this a good way to do this?
-        }
+        public static IEnumerable<Player> Players => PlayersById.Select(item => item.Value);
 
-        public static int PlayersCount
-        {
-            get { return PlayersById.Skip(0).Count(); }
-        }
+        public static int PlayersCount => PlayersById.Skip(0).Count();
 
         public static Player GetPlayerBySessionToken(string token)
         {
             Player player;
-            if (PlayersByToken.TryGetValue(token, out player)) return player;
-            return null;
+            PlayersByToken.TryGetValue(token, out player);
+            return player;
         }
 
         public static Player GetPlayerById(int id)
         {
             Player player;
-            if (PlayersById.TryGetValue(id, out player)) return player;
-            return null;
+            PlayersById.TryGetValue(id, out player);
+            return player;
         }
 
         public static Player GetPlayerByUsername(string username)
