@@ -10,25 +10,21 @@ namespace osuBancho.Core.Lobby.Matches
     class Match
     {
         public readonly int Id;
-        private bMatchData matchData;
+        internal bool Locked;
 
+        private bMatchData matchData;
         public bMatchData MatchData => matchData;
 
         private readonly ConcurrentDictionary<int, Player> _players = new ConcurrentDictionary<int, Player>();
-        
-        public IEnumerable<Player> Players => _players.Select(item => item.Value);  //.Values; } //TODO: Is this a good way to do this?
+        public IEnumerable<Player> Players => _players.Select(item => item.Value);
+        //TODO: Do anything like an MatchPlayer?
 
-        //TODO: Do anything better than this, like an MatchPlayer?
-        //For now this is fine, i think
-        private Player[] playingPlayers;
+        private int _playingCount;
+        private int _playFinishCount;
+        private int _skipRequestCount;
+        private int _loadFinishCount;
+        private object _matchLock = new object();
 
-        internal bool Locked;
-
-        private int PlayingCount;
-        private int PlayFinishCount;
-        private int SkipRequestCount;
-        private int LoadFinishCount;
-        
         public Match(int id, Player owner, bMatchData matchData)
         {
             this.Id = id;
@@ -39,7 +35,7 @@ namespace osuBancho.Core.Lobby.Matches
             AddPlayer(owner, false);
         }
 
-        public void Dispose()
+        public void Dispose(bool fromlobby = false)
         {
             if (_players.Count > 0)
             {
@@ -49,7 +45,7 @@ namespace osuBancho.Core.Lobby.Matches
             }
             matchData = null;
 
-            LobbyManager.MatchDisposed(this.Id);
+            if (!fromlobby) LobbyManager.MatchDisposed(this.Id);
         }
 
         public bool IsFull;
@@ -126,7 +122,6 @@ namespace osuBancho.Core.Lobby.Matches
                     OnPlayerSkip(playerId, true);
                 if (!player._matchPlayFinished)
                     OnPlayerEndMatch();
-                this.playingPlayers[slotPos] = null;
             }
 
             if (slotPos != -1)
@@ -147,11 +142,10 @@ namespace osuBancho.Core.Lobby.Matches
             if (matchData.inProgress) return;
             SetLocked(matchData.inProgress = true);
 
-            PlayingCount = 0;
-            PlayFinishCount = 0;
-            LoadFinishCount = 0;
-            SkipRequestCount = 0;
-            playingPlayers = new Player[bMatchData.MaxRoomPlayers];
+            _playingCount = 0;
+            _playFinishCount = 0;
+            _loadFinishCount = 0;
+            _skipRequestCount = 0;
 
             for (int i = 0; i < bMatchData.MaxRoomPlayers - 1; i++)
             {
@@ -161,14 +155,13 @@ namespace osuBancho.Core.Lobby.Matches
                 if (player.Status.status != bStatus.Multiplayer && player.Status.status != bStatus.Afk) continue;
 
                 matchData.slotStatus[i] = SlotStatus.Playing;
-                playingPlayers[i] = player;
-                PlayingCount++;
+                _playingCount++;
 
                 player.QueueCommand(Commands.OUT_MatchStart, this.matchData);
             }
-            if (PlayingCount == 0) SetLocked(matchData.inProgress = false);
+            if (_playingCount == 0) SetLocked(matchData.inProgress = false);
 
-            //TODO: This sendmatchupdate is useless when a player start the match..
+            //NOTE: This sendmatchupdate is useless when a player start the match..
             this.SendMatchUpdate();
         }
 
@@ -180,11 +173,11 @@ namespace osuBancho.Core.Lobby.Matches
             for (int i = 0; i < bMatchData.MaxRoomPlayers - 1; i++)
             {
                 if (matchData.slotStatus[i] != SlotStatus.Playing) continue;
-                Player player = playingPlayers[i];
-                //if (!_players.TryGetValue(matchData.slotId[i], out player)) continue;
+
+                Player player;
+                if (!_players.TryGetValue(matchData.slotId[i], out player)) continue;
 
                 matchData.slotStatus[i] = SlotStatus.NotReady;
-                playingPlayers[i] = null;
 
                 player.QueueCommand(forced ? Commands.OUT_MatchAbort : Commands.OUT_MatchComplete);
             }
@@ -195,109 +188,113 @@ namespace osuBancho.Core.Lobby.Matches
         public void SetLocked(bool value)
         {
             this.Locked = value;
-            //value?the room is now locked:the room no more is locked
         }
 
         //BUG: rarely, when two requests to "On" are do at same time this will make the int to not increment..
 
         public void OnPlayerEndMatch()
         {
-            Interlocked.Increment(ref PlayFinishCount);
-            if (PlayFinishCount < PlayingCount)
-                return;
+            lock (_matchLock) //NOTE: Try to fix the rare bug
+            {
+                if (++_playFinishCount < _playingCount)
+                    return;
 
-            this.FinishMatch();
+                this.FinishMatch();
+            }
         }
 
         public void OnPlayerSkip(int id, bool noSendRequest=false)
         {
-            Interlocked.Increment(ref SkipRequestCount);
-            bool sendMatchSkip = (SkipRequestCount >= PlayingCount);
-
-            foreach (Player player in playingPlayers)
+            lock (_matchLock)
             {
-                if (player == null) continue;
-                if (sendMatchSkip)
-                    player.QueueCommand(Commands.OUT_MatchSkip);
-                else if (!noSendRequest)
-                    player.QueueCommand(Commands.OUT_MatchSkipRequest, this.matchData.GetPlayerSlotPos(id));
+                bool sendMatchSkip = (++_skipRequestCount >= _playingCount);
+
+                foreach (Player player in Players.Where(player => player.IsMultiplaying))
+                {
+                    if (sendMatchSkip)
+                        player.QueueCommand(Commands.OUT_MatchSkip);
+                    else if (!noSendRequest)
+                        player.QueueCommand(Commands.OUT_MatchSkipRequest, this.matchData.GetPlayerSlotPos(id));
+                }
+            }
+        }
+
+        public void OnPlayerEndLoad()
+        {
+            lock (_matchLock)
+            {
+                if (++_loadFinishCount < _playingCount)
+                    return;
+
+                foreach (Player player in Players.Where(player => player.IsMultiplaying))
+                {
+                    player._matchSkipRequested = true;
+                    player.QueueCommand(Commands.OUT_MatchAllPlayersLoaded);
+                }
             }
         }
 
         public void OnPlayerFail(int id)
         {
-            foreach (Player player in playingPlayers)
+            foreach (Player player in Players.Where(player => player.IsMultiplaying))
             {
-                if (player == null) continue;
-                player.QueueCommand(Commands.OUT_MatchPlayerFailed, this.matchData.GetPlayerSlotPos(id));
+                player?.QueueCommand(Commands.OUT_MatchPlayerFailed, this.matchData.GetPlayerSlotPos(id));
             }
         }
 
         public void OnPlayerScoreUpdate(int id, bScoreData data)
         {
             data.byte_0 = (byte) this.matchData.GetPlayerSlotPos(id);
-            foreach (Player player in playingPlayers.Where(player => player != null))
+            foreach (Player player in Players.Where(player => player.IsMultiplaying))
             {
-                player.QueueCommand(Commands.OUT_MatchScoreUpdate, data);
+                player?.QueueCommand(Commands.OUT_MatchScoreUpdate, data);
             }
         }
 
-        public void OnPlayerEndLoad()
+        //NOTE: When a match is created or when a match end (and he back to room), the host send an packet to change match settings, but, why?
+        public void SetMatchData(bMatchData newMatchData)
         {
-            Interlocked.Increment(ref LoadFinishCount);
-            if (LoadFinishCount < PlayingCount)
-                return;
+            if (newMatchData.inProgress) return; //NOTE: The host sends an packet to bancho with playing room status when the match end
 
-            foreach (Player player in playingPlayers.Where(player => player != null))
-            {
-                player._matchSkipRequested = true;
-                player.QueueCommand(Commands.OUT_MatchAllPlayersLoaded);
-            }
-        }
-
-        public void SetMatchData(bMatchData matchData)
-        {
-            if (matchData.inProgress) return; //NOTE: The game sends an packet to bancho with playing room status when the match end, idk why
-
-            bool toggledToFreeMod = matchData.specialModes != this.matchData.specialModes &&
-                                    matchData.specialModes == MultiSpecialModes.FreeMod;
-            Mods mods = matchData.activeMods;
+            bool toggledToFreeMod = newMatchData.specialModes != this.matchData.specialModes &&
+                                    newMatchData.specialModes == MultiSpecialModes.FreeMod;
+            Mods mods = newMatchData.activeMods;
             if (toggledToFreeMod)
             {
                 if (mods.HasFlag(Mods.DoubleTime))
                 {
                     mods &= ~Mods.DoubleTime;
-                    matchData.activeMods = Mods.DoubleTime;
+                    newMatchData.activeMods = Mods.DoubleTime;
                 }
                 if (mods.HasFlag(Mods.Nightcore))
                 {
                     mods &= ~Mods.Nightcore;
-                    matchData.activeMods = Mods.Nightcore;
+                    newMatchData.activeMods = Mods.Nightcore;
                 }
                 if (mods.HasFlag(Mods.HalfTime))
                 {
                     mods &= ~Mods.HalfTime;
-                    matchData.activeMods = Mods.HalfTime;
+                    newMatchData.activeMods = Mods.HalfTime;
                 }
             }
 
-            bool toggledToTeamMode = matchData.IsTeamMode && !this.matchData.IsTeamMode;
-            bool toggledToNormalMode = !matchData.IsTeamMode && this.matchData.IsTeamMode;
+            bool toggledToTeamMode = newMatchData.IsTeamMode && !this.matchData.IsTeamMode;
+            bool toggledToNormalMode = !newMatchData.IsTeamMode && this.matchData.IsTeamMode;
 
             for (int i = 0; i < bMatchData.MaxRoomPlayers - 1; i++)
             {
-                if (matchData.slotId[i] == -1) continue;
-                if (matchData.slotStatus[i] == SlotStatus.Ready &&
-                    matchData.slotStatus[i] != SlotStatus.NoMap) matchData.slotStatus[i] = SlotStatus.NotReady;
-                if (toggledToFreeMod) matchData.slotMods[i] = mods;
-                if (toggledToTeamMode) matchData.slotTeam[i] = i%2 == 0 ? SlotTeams.Blue : SlotTeams.Red;
-                if (toggledToNormalMode) matchData.slotTeam[i] = SlotTeams.Neutral;
+                if (newMatchData.slotId[i] == -1) continue;
+                if (newMatchData.slotStatus[i] == SlotStatus.Ready &&
+                    newMatchData.slotStatus[i] != SlotStatus.NoMap) newMatchData.slotStatus[i] = SlotStatus.NotReady;
+                if (toggledToFreeMod) newMatchData.slotMods[i] = mods;
+                if (toggledToTeamMode) newMatchData.slotTeam[i] = i%2 == 0 ? SlotTeams.Blue : SlotTeams.Red;
+                if (toggledToNormalMode) newMatchData.slotTeam[i] = SlotTeams.Neutral;
             }
 
-            if (matchData.gamePassword == "") matchData.gamePassword = null;
-            else if (this.matchData.HasPassword) matchData.gamePassword = this.matchData.gamePassword;
+            if (newMatchData.gamePassword == "") newMatchData.gamePassword = null;
+            else if (this.matchData.HasPassword) newMatchData.gamePassword = this.matchData.gamePassword;
 
-            this.matchData = matchData;
+            this.matchData = newMatchData;
             this.SendMatchUpdate();
         }
 

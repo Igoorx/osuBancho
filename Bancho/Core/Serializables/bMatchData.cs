@@ -8,7 +8,7 @@ namespace osuBancho.Core.Serializables
     {
         public Mods activeMods;
         public string beatmapChecksum;
-        public int beatmapId = -1;
+        public int beatmapId;
         public string beatmapName;
         public string gameName;
         public string gamePassword;
@@ -53,7 +53,7 @@ namespace osuBancho.Core.Serializables
             }
             if (gameName.Length > 50)
             {
-                gameName = gameName.Remove(50);
+                this.gameName = gameName.Remove(50);
             }
         }
 
@@ -239,10 +239,7 @@ namespace osuBancho.Core.Serializables
             return num;
         }
 
-        public bool IsTeamMode
-        {
-            get { return matchTeamType == MatchTeamTypes.TagTeamVs || matchTeamType == MatchTeamTypes.TeamVs; }
-        }
+        public bool IsTeamMode => matchTeamType == MatchTeamTypes.TagTeamVs || matchTeamType == MatchTeamTypes.TeamVs;
 
         public bool IsInvalidTeam
         {

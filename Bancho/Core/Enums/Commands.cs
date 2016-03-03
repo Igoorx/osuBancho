@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace osuBancho.Core
+﻿namespace osuBancho.Core
 {
     internal enum Commands
     {
@@ -90,10 +84,10 @@ namespace osuBancho.Core
         const_79,
         const_80,
         OUT_MatchSkipRequest,
-        const_82,
-        UpdateUserInfo,
+        IN_AwayMessage,
+        OUT_UpdateUserInfo,
         const_84,
-        GetUsersStats,
+        IN_GetUsersStats,
         const_86,
         IN_InvitePlayer,
         OUT_IrcMessagePrivate,
@@ -103,9 +97,9 @@ namespace osuBancho.Core
         const_92,
         const_93,
         const_94,
-        UserForLoad,
-        LUserForLoad,
-        GetUsersInfo,
+        OUT_UserForLoad,
+        OUT_UserForLoadBundle,
+        IN_GetUsersInfo,
         const_98,
         const_99,
         const_100,

@@ -2,7 +2,7 @@
 
 namespace osuBancho.Helpers
 {
-    static class Utils
+    internal static class Utils
     {
         public static float CalcAccuracy(uint countMiss, uint count50, uint count100, uint count300)
         {

@@ -1,4 +1,8 @@
-﻿namespace osuBancho.Helpers
+﻿// ReSharper disable All
+#pragma warning disable 4296
+#pragma warning disable 0162
+
+namespace osuBancho.Helpers
 {
     public class SerializationReader : System.IO.BinaryReader
     {
