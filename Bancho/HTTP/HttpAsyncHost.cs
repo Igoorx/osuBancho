@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using osuBancho.Core;
 using osuBancho.Core.Players;
+using osuBancho.Core.Scores;
 using osuBancho.Helpers;
 
 namespace osuBancho.HTTP
@@ -116,10 +117,12 @@ namespace osuBancho.HTTP
 
                     switch (context.Request.Url.AbsolutePath)
                     {
+                        #region login
                         case "/":
+                        case "/web/bancho_connect.php":
                             if (context.Request.HttpMethod == "GET" || context.Request.UserAgent != "osu!")
                                 goto ShowMOTD;
-                        
+
                             context.Response.AddHeader("cho-protocol", Bancho.Protocol.ToString());
                             context.Response.AddHeader("cho-token", "");
 
@@ -183,11 +186,44 @@ namespace osuBancho.HTTP
                             }
                             break;
 
-                        case "/web/bancho_connect.php": //NOTE: Added for localhost test
-                            byte[] bytes = Encoding.Default.GetBytes("br");
-                            outStream.Write(bytes, 0, bytes.Length);
+                        //case "/web/bancho_connect.php": //NOTE: Added for localhost test
+                        //    byte[] bytes = Encoding.Default.GetBytes("br");
+                        //    outStream.Write(bytes, 0, bytes.Length);
                             break;
 
+                        #endregion
+                        case "/web/osu-osz2-getscores.php":
+                            string[] contents = context.Request.RawUrl.Replace("/web/osu-osz2-getscores.php?", "").Split('&');
+
+                            /*
+                            c = checksum
+                            i = beatmap id
+                           us = username
+                           ha = password hash
+                            f = beatmap file name
+                            v = rankingType_0
+                           vv = always 2
+                            s = 0 or 1
+                            m = mode (0,1,2,3)
+
+                            */
+                            int beatmapId = Convert.ToInt32(contents[6].Replace("i=", ""));
+                            string artist =
+                                contents[4].Replace("f=", "").Split(new string[] {"+-+"}, StringSplitOptions.None)[0].Replace("+", " ");
+                            string creator =
+                                contents[4].Replace("f=", "").Split(new string[] {"+("}, StringSplitOptions.None)[1]
+                                    .Replace(")", "").Split(new string[] {"+%5b"}, StringSplitOptions.None)[0].Replace("+", " ");
+                            string title =
+                                contents[4].Replace("f=", "").Split(new string[] { "+-+" }, StringSplitOptions.None)[1].Split(new string[] { "+(" + creator }, StringSplitOptions.None)[0].Replace("+", " ");
+                            string version /*difficulty*/ =
+                                contents[4].Replace("f=", "").Split(new string[] { creator + ")+%5b"}, StringSplitOptions.None)[1]
+                                    .Split(new string[] {"%5d.osu"}, StringSplitOptions.None)[0].Replace("+", " ");
+                            string file_md5 = contents[3].Replace("c=", "");
+                            var meme = new Scores(beatmapId, artist, creator, "", title, version,file_md5, PlayerManager.GetPlayerByUsername(contents[10].Replace("us=", "")).Id, Convert.ToInt32(contents[5].Replace("m=", "")));
+                            Console.WriteLine(meme.ToString(meme));
+                            Console.WriteLine(meme.isMapInDatabase());
+                            //meme.getScores(Convert.ToInt32(contents[6].Replace("i=", "")), Convert.ToInt32(contents[5].Replace("m=", "")), PlayerManager.GetPlayerByUsername(contents[10].Replace("us=", "")).Id);
+                            break;
                         default:
                             ShowMOTD:
                             if (Bancho.MOTD!=null)
