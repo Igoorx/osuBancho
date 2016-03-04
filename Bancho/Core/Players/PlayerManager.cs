@@ -136,21 +136,17 @@ namespace osuBancho.Core.Players
         public static async Task<bool> OnPacketReceived(string Token, Stream receivedStream, MemoryStream outStream)
         {
             if (receivedStream.Length < 7)
-            {
                 return false;
-            }
+
             Player player = GetPlayerBySessionToken(Token);
 
-            if (player != null)
-            {
-                receivedStream.Position = 0;
+            if (player == null) return false;
+            receivedStream.Position = 0;
                
-                await Task.Run(() => player.OnPacketReceived(receivedStream));
-                player.SerializeCommands(outStream);
+            await Task.Run(() => player.OnPacketReceived(receivedStream));
+            player.SerializeCommands(outStream);
                 
-                return true;
-            }
-            return false;
+            return true;
         }
     }
 }

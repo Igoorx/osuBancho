@@ -183,7 +183,10 @@ namespace osuBancho.HTTP
                             }
                             break;
 
-                        case "/web/bancho_connect.php": //NOTE: Added for localhost test
+                        case "/web/bancho_connect.php":
+                            //NOTE: Added for localhost test
+                            //NOTE: It isn't recommendeded to put handles for /web/ requests on Bancho
+
                             byte[] bytes = Encoding.Default.GetBytes("br");
                             outStream.Write(bytes, 0, bytes.Length);
                             break;

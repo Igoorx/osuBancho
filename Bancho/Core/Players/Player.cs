@@ -160,7 +160,8 @@ namespace osuBancho.Core.Players
         }
         //TODO: Should do modedata loading and etc related in another class?
 
-        public bUserStats SerializableStats => new bUserStats(this.Id, this.Status, this.currentModeData.TotalScore,
+        public bUserStats SerializableStats => 
+            new bUserStats(this.Id, this.Status, this.currentModeData.TotalScore,
             this.currentModeData.Accuracy,
             (int) this.currentModeData.PlayCount, this.currentModeData.RankedScore,
             (int) this.currentModeData.RankPosition, this.currentModeData.PerformancePoints);
@@ -230,16 +231,17 @@ namespace osuBancho.Core.Players
             while (!receivedStream.IsInEnd())
             {
                 Commands command = (Commands) receivedStream.ReadUInt16();
-                receivedStream.Position += 1;
-                uint cmdLen = receivedStream.ReadUInt32();
-                if (cmdLen > receivedStream.Length - receivedStream.Position)
+                receivedStream.Position += 1; //skip 1 byte
+
+                uint packetLength = receivedStream.ReadUInt32();
+                if (packetLength > receivedStream.Length - receivedStream.Position)
                 {
                     Debug.WriteLine("Invalid packet!! x.x");
                     PlayerManager.DisconnectPlayer(this.Id, DisconnectReason.Kick);
                     return;
                 }
 
-                SerializationReader reader = new SerializationReader(new MemoryStream(receivedStream.Read((int)cmdLen)));
+                var reader = new SerializationReader(new MemoryStream(receivedStream.Read((int)packetLength)));
 
                 Debug.WriteLine("[{2}] Command received: {0} [{1}]", command.ToString().Contains("_")?command.ToString().Split('_')[1]:command.ToString(),
                             Utils.ByteArrayRepr((reader.BaseStream as MemoryStream).ToArray()), this.Username);
@@ -270,22 +272,22 @@ namespace osuBancho.Core.Players
                                 this.QueueCommand(Commands.OUT_Ping, 0); //lol, i can use this for ban
                                 break;
                             case "!togglelock":
-                                this.currentMatch.SetLocked(!this.currentMatch.Locked);
+                                this.currentMatch?.SetLocked(!this.currentMatch.Locked);
                                 break;
                             case "!abort":
-                                this.currentMatch.FinishMatch(true);
+                                this.currentMatch?.FinishMatch(true);
                                 break;
                             case "!start":
-                                this.currentMatch.StartMatch();
+                                this.currentMatch?.StartMatch();
                                 break;
                             case "!givemehost":
-                                this.currentMatch.SetHost(this);
+                                this.currentMatch?.SetHost(this);
                                 break;
                             case "!targetmod":
-                                this.currentMatch.SetMods(Mods.Target);
+                                this.currentMatch?.SetMods(Mods.Target);
                                 break;
                             case "!automod":
-                                this.currentMatch.SetMods(Mods.Autoplay); //does nothing in gameplay >_>
+                                this.currentMatch?.SetMods(Mods.Autoplay); //does nothing in gameplay >_>
                                 break;
                         }
                         break;
@@ -312,17 +314,14 @@ namespace osuBancho.Core.Players
                             this.Spectating.RemoveSpectator(this.Id);
                             this.Spectating = null;
                         }
-                        else
-                        {
-                            player.AddSpectator(this);
-                            Spectating = player;
-                        }
+                        player.AddSpectator(this);
+                        Spectating = player;
                         //TODO: Spectator channel
-                            break;
+                        //TODO: Spectator see others spectators
+                        break;
                     }
                     case Commands.IN_StopSpectate:
-                        if (this.Spectating == null) break;
-                        this.Spectating.RemoveSpectator(this.Id);
+                        this.Spectating?.RemoveSpectator(this.Id);
                         this.Spectating = null;
                         break;
                     case Commands.IN_SpectateFrames:
@@ -358,32 +357,31 @@ namespace osuBancho.Core.Players
                             QueueCommand(Commands.OUT_MatchJoinFail);
                         break;
                     case Commands.IN_MatchLeave: 
-                        if (this.currentMatch!=null)
-                            currentMatch.RemovePlayer(this.Id);
+                        currentMatch?.RemovePlayer(this.Id);
                         break;
                     case Commands.IN_MatchChangeSlot:
-                        if (this.currentMatch != null && !this.currentMatch.Locked)
+                        if (this.currentMatch?.Locked == false)
                             currentMatch.MovePlayerSlot(this.Id, reader.ReadInt32());
                         break;
                     case Commands.IN_MatchReady:
-                        if (this.currentMatch != null && !this.currentMatch.Locked)
+                        if (this.currentMatch?.Locked == false)
                             currentMatch.SetReady(true, this.Id);
                         break;
                     case Commands.IN_MatchNotReady: //55, not in order but is better here
-                        if (this.currentMatch != null && !this.currentMatch.Locked)
+                        if (this.currentMatch?.Locked == false)
                             currentMatch.SetReady(false, this.Id);
                         break;
                     case Commands.IN_MatchLockSlot:
-                        if (this.currentMatch != null && this.currentMatch.IsHost(this.Id))
+                        if (this.currentMatch?.IsHost(this.Id) == true)
                             currentMatch.LockSlot(reader.ReadInt32());
                         break;
                     case Commands.IN_MatchChangeSettings:
                     case Commands.IN_MatchChangePassword:
-                        if (this.currentMatch != null && this.currentMatch.IsHost(this.Id))
+                        if (this.currentMatch?.IsHost(this.Id) == true)
                             currentMatch.SetMatchData(new bMatchData(reader));
                         break;
                     case Commands.IN_MatchStart:
-                        if (this.currentMatch != null && this.currentMatch.IsHost(this.Id))
+                        if (this.currentMatch?.IsHost(this.Id) == true)
                             currentMatch.StartMatch();
                         break;
                     case Commands.IN_MatchScoreUpdate:
@@ -404,7 +402,7 @@ namespace osuBancho.Core.Players
                         }
                         break;
                     case Commands.IN_MatchChangeMods:
-                        if (this.currentMatch != null && !this.currentMatch.Locked)
+                        if (this.currentMatch?.Locked == false)
                             this.currentMatch.SetMods(this.Id, (Mods)reader.ReadInt32());
                         break;
                     case Commands.IN_MatchLoadComplete:
@@ -415,16 +413,14 @@ namespace osuBancho.Core.Players
                         }
                         break;
                     case Commands.IN_MatchNoBeatmap:
-                        if (this.currentMatch != null)
-                            currentMatch.SetHasMap(false, this.Id);
+                        currentMatch?.SetHasMap(false, this.Id);
                         break;
                     case Commands.IN_MatchFailed:
                         if (this.currentMatch != null && this.IsMultiplaying)
                             currentMatch.OnPlayerFail(this.Id);
                         break;
                     case Commands.IN_MatchHasBeatmap:
-                        if (this.currentMatch != null)
-                            currentMatch.SetHasMap(true, this.Id);
+                        currentMatch?.SetHasMap(true, this.Id);
                         break;
                     case Commands.IN_MatchSkipRequest:
                         if (this.currentMatch != null && this.IsMultiplaying)
@@ -434,7 +430,7 @@ namespace osuBancho.Core.Players
                         }
                         break;
                     case Commands.IN_MatchTransferHost:
-                        if (this.currentMatch != null && this.currentMatch.IsHost(this.Id))
+                        if (this.currentMatch?.IsHost(this.Id) == true)
                             currentMatch.SetHost(reader.ReadInt32());
                         break;
                     case Commands.IN_GetUsersStats:

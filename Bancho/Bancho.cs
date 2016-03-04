@@ -32,10 +32,11 @@ namespace osuBancho
         static void Main()
         {
             ServerStarted = DateTime.Now;
+
             Console.Write("Initializing Bancho");
             if (IsDebug) Console.Write(" in debug mode");
             Console.WriteLine("..");
-
+            
             Process.GetCurrentProcess().PriorityBoostEnabled = true;
             Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.RealTime;
             Thread.CurrentThread.Priority = ThreadPriority.Highest;
@@ -44,11 +45,11 @@ namespace osuBancho
             Console.Title = "osu!Bancho";
 
             if (File.Exists("MOTD.txt"))
-            {
                 MOTD = Encoding.Default.GetBytes($"<pre>\n{File.ReadAllText("MOTD.txt").InsertHrefInUrls()}\n</pre>");
-            }
 
-            if (!File.Exists("config.ini")) File.WriteAllText("config.ini", IniFile.DefaultIni);
+            if (!File.Exists("config.ini"))
+                File.WriteAllText("config.ini", IniFile.DefaultIni);
+
             IniFile ini = new IniFile("config.ini");
 
             CultureInfo = CultureInfo.CreateSpecificCulture("en-GB");

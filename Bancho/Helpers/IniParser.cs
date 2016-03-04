@@ -34,13 +34,7 @@ MinimumPoolSize = 10
 
         // *** File name ***
         private string m_FileName = null;
-        internal string FileName
-        {
-            get
-            {
-                return m_FileName;
-            }
-        }
+        internal string FileName => m_FileName;
 
         // *** Lazy loading flag ***
         private bool m_Lazy = false;
@@ -82,9 +76,7 @@ MinimumPoolSize = 10
         // *** Parse section name ***
         private string ParseSectionName(string Line)
         {
-            if (!Line.StartsWith("[")) return null;
-            if (!Line.EndsWith("]")) return null;
-            if (Line.Length < 3) return null;
+            if (!Line.StartsWith("[") || !Line.EndsWith("]") || Line.Length < 3) return null;
             return Line.Substring(1, Line.Length - 2);
         }
 
@@ -239,23 +231,20 @@ MinimumPoolSize = 10
                             // *** Check for section names ***
                             if ((SectionName != null) || (!Reading))
                             {
-                                if (CurrentSection != null)
+                                // *** Write all remaining modified values before leaving a section ****
+                                if (CurrentSection?.Count > 0)
                                 {
-                                    // *** Write all remaining modified values before leaving a section ****
-                                    if (CurrentSection.Count > 0)
+                                    foreach (string fkey in CurrentSection.Keys)
                                     {
-                                        foreach (string fkey in CurrentSection.Keys)
+                                        if (CurrentSection.TryGetValue(fkey, out Value))
                                         {
-                                            if (CurrentSection.TryGetValue(fkey, out Value))
-                                            {
-                                                sw.Write(fkey);
-                                                sw.Write('=');
-                                                sw.WriteLine(Value);
-                                            }
+                                            sw.Write(fkey);
+                                            sw.Write('=');
+                                            sw.WriteLine(Value);
                                         }
-                                        sw.WriteLine();
-                                        CurrentSection.Clear();
                                     }
+                                    sw.WriteLine();
+                                    CurrentSection.Clear();
                                 }
 
                                 if (Reading)
@@ -299,7 +288,7 @@ MinimumPoolSize = 10
                     finally
                     {
                         // *** Cleanup: close files ***                  
-                        if (sr != null) sr.Close();
+                        sr?.Close();
                         sr = null;
                     }
                 }
@@ -343,7 +332,7 @@ MinimumPoolSize = 10
             finally
             {
                 // *** Cleanup: close files ***                  
-                if (sw != null) sw.Close();
+                sw?.Close();
                 sw = null;
             }
         }
