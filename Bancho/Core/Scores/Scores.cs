@@ -32,16 +32,29 @@ namespace osuBancho.Core.Scores
             _player_id = player_id;
             _mode = mode;
         }
+
+        public Scores(Scores score)
+        {
+            _beatmapId = score._beatmapId;
+            _artist = score._artist;
+            _creator = score._creator;
+            _source = score._source;
+            _title = score._title;
+            _version = score._version;
+            _file_md5 = score._file_md5;
+            _player_id = score._player_id;
+            _mode = score._mode;
+        }
         public bool isMapInDatabase()
         {
-            DataRow scoreDataRow;
+            int isInDatabase = 0;
             using (IQueryAdapter dbClient = Bancho.DatabaseManager.GetQueryReactor())
             {
                 dbClient.SetQuery(
-                    "SELECT * FROM beatmaps_info WHERE set_id = " + _beatmapId + " AND file_md5 = \"" + _file_md5 + "\" LIMIT 1");
-                scoreDataRow = dbClient.getRow();
+                    $"SELECT * FROM beatmaps_info WHERE set_id = {_beatmapId} AND file_md5 = \"{_file_md5}\" LIMIT 1");
+                isInDatabase = dbClient.getInteger();
             }
-            if (scoreDataRow == null)
+            if (isInDatabase == 0)
             {
                 insertMapIntoDatabase();
                 return false;

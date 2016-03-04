@@ -57,17 +57,17 @@ namespace osuBancho
 
             var connectionString = new MySqlConnectionStringBuilder
             {
-                ConnectionTimeout = ini.GetValue("DatabaseConnection", "Timeout", 10u),
-                Database = ini.GetValue("DatabaseConnection", "Database", "osu!"),
+                ConnectionTimeout = 10,
+                Database = "osu!",
                 DefaultCommandTimeout = 30,
                 Logging = false,
-                MaximumPoolSize = ini.GetValue("DatabaseConnection", "MaximumPoolSize", 250u),
-                MinimumPoolSize = ini.GetValue("DatabaseConnection", "MinimumPoolSize", 10u),
-                Password = ini.GetValue("DatabaseConnection", "Password", ""),
+                MaximumPoolSize = 250,
+                MinimumPoolSize = 10,
+                Password = "admin",
                 Pooling = true,
-                Port = ini.GetValue("DatabaseConnection", "Port", 3306u),
-                Server = ini.GetValue("DatabaseConnection", "Server", "127.0.0.1"),
-                UserID = ini.GetValue("DatabaseConnection", "User", "root"),
+                Port = 3306,
+                Server = "127.0.0.1",
+                UserID = "root",
                 AllowZeroDateTime = true,
                 ConvertZeroDateTime = true,
             };
@@ -80,16 +80,26 @@ namespace osuBancho
                 Environment.Exit(1);
             }
 
-            UpdateOnlineNow();
-            //TODO: Do a worker thread to update periodcally the onlines now, and kill zombies
+            new Thread(() =>
+            {
+                while (true)
+                {
+                    UpdateOnlineNow();
+                    //Debug.WriteLine("Updated Current Online List");
+                    Thread.Sleep(15000);
+                }
+            })
+            { IsBackground = true}.Start();
+            //nTODO: Do a worker thread to update periodcally the onlines now, and kill zombies
 
 #if DEBUG
             Debug.Listeners.Add(new ConsoleTraceListener());
 #endif
 
             Console.WriteLine("Initializing HTTP..");
-            HttpAsyncHost http = new HttpAsyncHost(IsDebug? 1 : 120);
-            http.Run("http://+:"+ini.GetValue("Bancho", "Port", "80")+"/");
+            HttpAsyncHost http = new HttpAsyncHost(120);
+            Console.WriteLine("Bancho is UP!");
+            http.Run(new[] { "http://+:80/" });
 
             Console.ReadLine();
         }

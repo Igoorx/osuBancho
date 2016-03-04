@@ -6,6 +6,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using osuBancho.Core;
@@ -194,7 +195,7 @@ namespace osuBancho.HTTP
                         #endregion
                         case "/web/osu-osz2-getscores.php":
                             string[] contents = context.Request.RawUrl.Replace("/web/osu-osz2-getscores.php?", "").Split('&');
-
+                            Console.WriteLine(context.Request.RawUrl);
                             /*
                             c = checksum
                             i = beatmap id
@@ -211,17 +212,24 @@ namespace osuBancho.HTTP
                             string artist =
                                 contents[4].Replace("f=", "").Split(new string[] {"+-+"}, StringSplitOptions.None)[0].Replace("+", " ");
                             string creator =
-                                contents[4].Replace("f=", "").Split(new string[] {"+("}, StringSplitOptions.None)[1]
-                                    .Replace(")", "").Split(new string[] {"+%5b"}, StringSplitOptions.None)[0].Replace("+", " ");
+                                contents[4].Replace("f=", "");
+                            creator = creator.Split(new string[] { "+(" }, StringSplitOptions.None)[countThat(creator, "+(")]
+                                    .Replace(")", "").Split(new string[] { "+%5b" }, StringSplitOptions.None)[0].Replace("+", " ");
                             string title =
                                 contents[4].Replace("f=", "").Split(new string[] { "+-+" }, StringSplitOptions.None)[1].Split(new string[] { "+(" + creator }, StringSplitOptions.None)[0].Replace("+", " ");
                             string version /*difficulty*/ =
-                                contents[4].Replace("f=", "").Split(new string[] { creator + ")+%5b"}, StringSplitOptions.None)[1]
-                                    .Split(new string[] {"%5d.osu"}, StringSplitOptions.None)[0].Replace("+", " ");
+                                contents[4].Replace("f=", "").Split(new string[] { creator + ")+%5b" }, StringSplitOptions.None)[1]
+                                    .Split(new string[] { "%5d.osu" }, StringSplitOptions.None)[0].Replace("+", " ");
                             string file_md5 = contents[3].Replace("c=", "");
                             var meme = new Scores(beatmapId, artist, creator, "", title, version,file_md5, PlayerManager.GetPlayerByUsername(contents[10].Replace("us=", "")).Id, Convert.ToInt32(contents[5].Replace("m=", "")));
                             Console.WriteLine(meme.ToString(meme));
-                            Console.WriteLine(meme.isMapInDatabase());
+                            //Console.WriteLine(meme.isMapInDatabase());
+                            outStream.Write(Encoding.ASCII.GetBytes("2|false|0|0|0\r\n0\r\n[bold:0,size:20]deeznuts|sss\r\n9.28235\r\n1|idiot|1|0|0|10|50|1|0|0|0|0|0|1|1|1\r\n"));
+                            //outStream.WriteLine(Encoding.ASCII.GetBytes("3|false|0|0|0"));
+                            //outStream.WriteLine(Encoding.ASCII.GetBytes(""));
+                            //outStream.WriteLine(Encoding.ASCII.GetBytes(""));
+                            //outStream.WriteLine(Encoding.ASCII.GetBytes("9.28235"));
+                            //outStream.WriteLine(Encoding.ASCII.GetBytes("\n1|You|1|0|0|10|50|1|0|0|0|0|0|1|644112000"));
                             //meme.getScores(Convert.ToInt32(contents[6].Replace("i=", "")), Convert.ToInt32(contents[5].Replace("m=", "")), PlayerManager.GetPlayerByUsername(contents[10].Replace("us=", "")).Id);
                             break;
                         default:
@@ -265,6 +273,12 @@ namespace osuBancho.HTTP
             sw.Stop();
             Console.WriteLine("Time to complete request: " + sw.Elapsed.ToString());
 #endif
+        }
+
+        static Int32 countThat(string orig, string find)
+        {
+            var s2 = orig.Replace(find, "");
+            return (orig.Length - s2.Length) / find.Length;
         }
     }
 }
