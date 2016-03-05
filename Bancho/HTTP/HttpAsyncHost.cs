@@ -199,12 +199,12 @@ namespace osuBancho.HTTP
                             string version /*difficulty*/ = query["f"].Split('[')[countThat(query["f"], "[")].Split(']')[0];
                             string fileMd5 = query["c"];
                             var meme = new Scores(beatmapId, artist, creator, "", title, version, fileMd5, PlayerManager.GetPlayerByUsername(query["us"]).Id, Convert.ToInt32(query["m"]));
-                            meme.isMapInDatabase();
-                            outStream.WriteLine(Encoding.UTF8.GetBytes($"{meme.approvedState}|false|0|{beatmapId}|0"));
-                            outStream.WriteLine(Encoding.UTF8.GetBytes("0"));
-                            outStream.WriteLine(Encoding.UTF8.GetBytes($"[bold:0,size:20]{artist}|{title}"));
-                            outStream.WriteLine(Encoding.UTF8.GetBytes("9.28235"));
-                            outStream.WriteLine(Encoding.UTF8.GetBytes("0|why are you so gay|133742069|1010|1010|1010|1010|0|1010|1010|1|1|1|1|644112000|1"));
+                            //meme.isMapInDatabase();
+                            //outStream.WriteLine(Encoding.UTF8.GetBytes($"{meme.approvedState}|false|0|0|{1+1}"));
+                            //outStream.WriteLine(Encoding.UTF8.GetBytes("0"));
+                            //outStream.WriteLine(Encoding.UTF8.GetBytes($"[bold:0,size:20]{artist}|{title}"));
+                            //outStream.WriteLine(Encoding.UTF8.GetBytes("9.28235"));
+                            //outStream.WriteLine(Encoding.UTF8.GetBytes(ScoreHelper.makeScoreString(0, "why", 420420420, 420, 0, 0, 420, 0, 0, 0, 1, 0, 1, 1, 0)));
                             break;
                         #endregion
                         #region Submit Modular

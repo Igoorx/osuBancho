@@ -60,6 +60,7 @@
     <Compile Include="Helpers\AES.cs" />
     <Compile Include="Helpers\CanNotAccessBanchoException.cs" />
     <Compile Include="Helpers\IniParser.cs" />
+    <Compile Include="Helpers\ScoreHelper.cs" />
     <Compile Include="IRC\Channels\Channel.cs" />
     <Compile Include="IRC\Channels\ChannelManager.cs" />
     <Compile Include="Core\Command.cs" />
