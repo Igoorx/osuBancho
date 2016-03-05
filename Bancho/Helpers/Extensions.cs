@@ -34,7 +34,7 @@ namespace osuBancho.Helpers
         public static void WriteLine(this Stream stream, byte[] bytes)
         {
             stream.Write(bytes, 0, bytes.Length);
-            stream.Write(Encoding.ASCII.GetBytes("\n"), 0, Encoding.ASCII.GetBytes("\n").Length);
+            stream.Write(Encoding.ASCII.GetBytes("\r\n"), 0, Encoding.ASCII.GetBytes("\r\n").Length);
         }
 
         /// <summary>

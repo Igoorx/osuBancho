@@ -51,8 +51,9 @@ namespace osuBancho.Core.Scores
             using (IQueryAdapter dbClient = Bancho.DatabaseManager.GetQueryReactor())
             {
                 dbClient.SetQuery(
-                    $"SELECT * FROM beatmaps_info WHERE set_id = {_beatmapId} AND file_md5 = \"{_file_md5}\" LIMIT 1");
+                    $"SELECT * FROM beatmaps_info WHERE file_md5 = \"{_file_md5}\" LIMIT 1");
                 isInDatabase = dbClient.getInteger();
+
             }
             if (isInDatabase == 0)
             {
@@ -66,7 +67,7 @@ namespace osuBancho.Core.Scores
         {
             string query =
                 "INSERT INTO `beatmaps_info`(`approved`, `approved_date`, `last_update`, `set_id`, `artist`, `creator`, `source`, `title`, `version`, `file_md5`) " +
-                "VALUES (3,\"0000-00-00\",\"0000-00-00\"," + _beatmapId + ",\""+_artist+"\",\""+_creator+"\",\"\",\""+_title+"\",\""+_version+"\",\""+_file_md5+"\")";
+                "VALUES (2,\"0000-00-00\",\"0000-00-00\"," + _beatmapId + ",\"" + _artist + "\",\"" + _creator + "\",\"\",\"" + _title + "\",\"" + _version + "\",\"" + _file_md5 + "\")";
             using (IQueryAdapter dbClient = Bancho.DatabaseManager.GetQueryReactor())
             {
                 dbClient.RunQuery(query);
@@ -101,6 +102,8 @@ namespace osuBancho.Core.Scores
                 }
             }
         }
+
+        public int approvedState => 2;
 
         public new string ToString(Scores score)
         {

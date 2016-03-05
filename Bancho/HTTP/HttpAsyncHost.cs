@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -32,7 +33,7 @@ namespace osuBancho.HTTP
         {
             _listener = new HttpListener();
             // Multiply by number of cores:
-            _accepts = accepts*Environment.ProcessorCount;
+            _accepts = accepts * Environment.ProcessorCount;
         }
 
         public List<string> Prefixes => _listener.Prefixes.ToList();
@@ -59,7 +60,7 @@ namespace osuBancho.HTTP
                 }
                 catch (HttpListenerException hlex)
                 {
-                    Console.Error.WriteLine(hlex.ErrorCode+": "+hlex.Message);
+                    Console.Error.WriteLine(hlex.ErrorCode + ": " + hlex.Message);
                     return;
                 }
 
@@ -186,60 +187,48 @@ namespace osuBancho.HTTP
                                 outStream.WriteLoginResult(LoginResult.Error);
                             }
                             break;
-
-                        //case "/web/bancho_connect.php": //NOTE: Added for localhost test
-                        //    byte[] bytes = Encoding.Default.GetBytes("br");
-                        //    outStream.Write(bytes, 0, bytes.Length);
-                            break;
-
                         #endregion
+                        #region getscores
                         case "/web/osu-osz2-getscores.php":
-                            string[] contents = context.Request.RawUrl.Replace("/web/osu-osz2-getscores.php?", "").Split('&');
-                            Console.WriteLine(context.Request.RawUrl);
-                            /*
-                            c = checksum
-                            i = beatmap id
-                           us = username
-                           ha = password hash
-                            f = beatmap file name
-                            v = rankingType_0
-                           vv = always 2
-                            s = 0 or 1
-                            m = mode (0,1,2,3)
-
-                            */
-                            int beatmapId = Convert.ToInt32(contents[6].Replace("i=", ""));
-                            string artist =
-                                contents[4].Replace("f=", "").Split(new string[] {"+-+"}, StringSplitOptions.None)[0].Replace("+", " ");
-                            string creator =
-                                contents[4].Replace("f=", "");
-                            creator = creator.Split(new string[] { "+(" }, StringSplitOptions.None)[countThat(creator, "+(")]
-                                    .Replace(")", "").Split(new string[] { "+%5b" }, StringSplitOptions.None)[0].Replace("+", " ");
-                            string title =
-                                contents[4].Replace("f=", "").Split(new string[] { "+-+" }, StringSplitOptions.None)[1].Split(new string[] { "+(" + creator }, StringSplitOptions.None)[0].Replace("+", " ");
-                            string version /*difficulty*/ =
-                                contents[4].Replace("f=", "").Split(new string[] { creator + ")+%5b" }, StringSplitOptions.None)[1]
-                                    .Split(new string[] { "%5d.osu" }, StringSplitOptions.None)[0].Replace("+", " ");
-                            string file_md5 = contents[3].Replace("c=", "");
-                            var meme = new Scores(beatmapId, artist, creator, "", title, version,file_md5, PlayerManager.GetPlayerByUsername(contents[10].Replace("us=", "")).Id, Convert.ToInt32(contents[5].Replace("m=", "")));
-                            Console.WriteLine(meme.ToString(meme));
-                            //Console.WriteLine(meme.isMapInDatabase());
-                            outStream.Write(Encoding.ASCII.GetBytes("2|false|0|0|0\r\n0\r\n[bold:0,size:20]deeznuts|sss\r\n9.28235\r\n1|idiot|1|0|0|10|50|1|0|0|0|0|0|1|1|1\r\n"));
-                            //outStream.WriteLine(Encoding.ASCII.GetBytes("3|false|0|0|0"));
-                            //outStream.WriteLine(Encoding.ASCII.GetBytes(""));
-                            //outStream.WriteLine(Encoding.ASCII.GetBytes(""));
-                            //outStream.WriteLine(Encoding.ASCII.GetBytes("9.28235"));
-                            //outStream.WriteLine(Encoding.ASCII.GetBytes("\n1|You|1|0|0|10|50|1|0|0|0|0|0|1|644112000"));
-                            //meme.getScores(Convert.ToInt32(contents[6].Replace("i=", "")), Convert.ToInt32(contents[5].Replace("m=", "")), PlayerManager.GetPlayerByUsername(contents[10].Replace("us=", "")).Id);
+                            NameValueCollection query = context.Request.QueryString;
+                            int beatmapId = Convert.ToInt32(query["i"]);
+                            string artist = query["f"].Split(new[] { " - " }, StringSplitOptions.None)[0];
+                            string creator = query["f"].Split('(')[countThat(query["f"], "(")].Split(')')[0];
+                            string title = query["f"].Split(new[] { " - " }, StringSplitOptions.None)[1].Split(new[] {"(" + creator + ")"}, StringSplitOptions.None)[0];
+                            title = title.Substring(0, title.Length - 1);
+                            string version /*difficulty*/ = query["f"].Split('[')[countThat(query["f"], "[")].Split(']')[0];
+                            string fileMd5 = query["c"];
+                            var meme = new Scores(beatmapId, artist, creator, "", title, version, fileMd5, PlayerManager.GetPlayerByUsername(query["us"]).Id, Convert.ToInt32(query["m"]));
+                            meme.isMapInDatabase();
+                            outStream.WriteLine(Encoding.UTF8.GetBytes($"{meme.approvedState}|false|0|{beatmapId}|0"));
+                            outStream.WriteLine(Encoding.UTF8.GetBytes("0"));
+                            outStream.WriteLine(Encoding.UTF8.GetBytes($"[bold:0,size:20]{artist}|{title}"));
+                            outStream.WriteLine(Encoding.UTF8.GetBytes("9.28235"));
+                            outStream.WriteLine(Encoding.UTF8.GetBytes("0|why are you so gay|133742069|1010|1010|1010|1010|0|1010|1010|1|1|1|1|644112000|1"));
                             break;
+                        #endregion
+                        #region Submit Modular
+                        case "/web/osu-submit-modular.php":
+                            string[] _loginContent;
+                            using (var reader = new StreamReader(context.Request.InputStream, Encoding.UTF8))
+                            {
+                                _loginContent = reader.ReadToEnd().Split('\n');
+                            }
+                            string iv, score, decryptedScore;
+                            byte[] decodedIV;
+                            score = _loginContent[11].Replace("\r", "");
+                            iv = _loginContent[39].Replace("\r", "");
+                            decodedIV = Convert.FromBase64String(iv);
+                            decryptedScore = Helpers.AES.DecryptStringFromBytes_Aes(score, "h89f2-890h2h89b34g-h80g134n90133", ref iv);
+                            break;
+                        #endregion
                         default:
                             ShowMOTD:
-                            if (Bancho.MOTD!=null)
+                            if (Bancho.MOTD != null)
                                 outStream.Write(Bancho.MOTD, 0, Bancho.MOTD.Length);
                             break;
                     }
                 }
-
                 if (outStream.Length != 0)
                 {
                     context.Response.ContentType = "text/html; charset=UTF-8";

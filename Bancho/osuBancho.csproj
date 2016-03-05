@@ -57,6 +57,7 @@
   <ItemGroup>
     <Compile Include="Bancho.cs" />
     <Compile Include="Core\Scores\Scores.cs" />
+    <Compile Include="Helpers\AES.cs" />
     <Compile Include="Helpers\CanNotAccessBanchoException.cs" />
     <Compile Include="Helpers\IniParser.cs" />
     <Compile Include="IRC\Channels\Channel.cs" />
