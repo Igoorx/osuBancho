@@ -23,6 +23,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -46,9 +47,15 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="MaxMind.Db">
+      <HintPath>..\DLLs\MaxMind.Db.dll</HintPath>
+    </Reference>
     <Reference Include="MySql.Data">
       <HintPath>..\DLLs\MySql.Data.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\DLLs\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -56,11 +63,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Bancho.cs" />
-    <Compile Include="Core\Scores\Scores.cs" />
-    <Compile Include="Helpers\AES.cs" />
     <Compile Include="Helpers\CanNotAccessBanchoException.cs" />
     <Compile Include="Helpers\IniParser.cs" />
-    <Compile Include="Helpers\ScoreHelper.cs" />
+    <Compile Include="Helpers\GeoUtil.cs" />
     <Compile Include="IRC\Channels\Channel.cs" />
     <Compile Include="IRC\Channels\ChannelManager.cs" />
     <Compile Include="Core\Command.cs" />
@@ -116,6 +121,12 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="boat.ico" />
+    <None Include="GeoLite2-City.mmdb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="MOTD.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

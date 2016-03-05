@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using osuBancho.Core;
 
@@ -21,25 +20,16 @@ namespace osuBancho.Helpers
         /// <summary>
         /// Write bytes to the current <see cref="Stream"/>.
         /// </summary>
+        /// <param name="bytes">The array of bytes to write into <see cref="Stream"/></param>
         public static void Write(this Stream stream, byte[] bytes)
         {
             stream.Write(bytes, 0, bytes.Length);
         }
 
         /// <summary>
-        /// Writes bytes to the current <see cref="Stream"/>, uses a new line.
-        /// </summary>
-        /// <param name="stream"></param>
-        /// <param name="bytes"></param>
-        public static void WriteLine(this Stream stream, byte[] bytes)
-        {
-            stream.Write(bytes, 0, bytes.Length);
-            stream.Write(Encoding.ASCII.GetBytes("\r\n"), 0, Encoding.ASCII.GetBytes("\r\n").Length);
-        }
-
-        /// <summary>
         /// Read specified bytes count from the current <see cref="Stream"/>.
         /// </summary>
+        /// <param name="count">The bytes count to read from <see cref="Stream"/></param>
         public static byte[] Read(this Stream stream, int count)
         {
             byte[] result = new byte[count];

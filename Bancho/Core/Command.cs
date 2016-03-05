@@ -25,12 +25,11 @@ namespace osuBancho.Core
                 return;
             }
             this.Serializable = serializable as bSerializable;
+            //If it isn't an bSerializable, then it should be a regulartype
             this.RegularType = this.Serializable == null ? serializable : null;
         }
 
-        public override string ToString()
-        {
-            return $"Id: {Id.ToString()}, {this.Serializable?.GetType().Name ?? this.RegularType.GetType().Name}";
-        }
+        public override string ToString() =>
+            $"Id: {Id.ToString()}, {this.Serializable?.GetType().Name ?? this.RegularType.GetType().Name}";
     }
 }

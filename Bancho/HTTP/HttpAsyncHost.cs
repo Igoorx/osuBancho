@@ -1,18 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using osuBancho.Core;
 using osuBancho.Core.Players;
-using osuBancho.Core.Scores;
 using osuBancho.Helpers;
 
 namespace osuBancho.HTTP
@@ -33,7 +30,7 @@ namespace osuBancho.HTTP
         {
             _listener = new HttpListener();
             // Multiply by number of cores:
-            _accepts = accepts * Environment.ProcessorCount;
+            _accepts = accepts*Environment.ProcessorCount;
         }
 
         public List<string> Prefixes => _listener.Prefixes.ToList();
@@ -60,11 +57,11 @@ namespace osuBancho.HTTP
                 }
                 catch (HttpListenerException hlex)
                 {
-                    Console.Error.WriteLine(hlex.ErrorCode + ": " + hlex.Message);
+                    Console.Error.WriteLine(hlex.ErrorCode+": "+hlex.Message);
                     return;
                 }
 
-                Console.WriteLine("Bancho is UP!\n");
+                Console.WriteLine("Bancho is UP!" + Environment.NewLine);
 
                 // Accept connections:
                 // Higher values mean more connections can be maintained yet at a much slower average response time; fewer connections will be rejected.
@@ -119,12 +116,10 @@ namespace osuBancho.HTTP
 
                     switch (context.Request.Url.AbsolutePath)
                     {
-                        #region login
                         case "/":
-                        case "/web/bancho_connect.php":
                             if (context.Request.HttpMethod == "GET" || context.Request.UserAgent != "osu!")
                                 goto ShowMOTD;
-
+                        
                             context.Response.AddHeader("cho-protocol", Bancho.Protocol.ToString());
                             context.Response.AddHeader("cho-token", "");
 
@@ -187,48 +182,23 @@ namespace osuBancho.HTTP
                                 outStream.WriteLoginResult(LoginResult.Error);
                             }
                             break;
-                        #endregion
-                        #region getscores
-                        case "/web/osu-osz2-getscores.php":
-                            NameValueCollection query = context.Request.QueryString;
-                            int beatmapId = Convert.ToInt32(query["i"]);
-                            string artist = query["f"].Split(new[] { " - " }, StringSplitOptions.None)[0];
-                            string creator = query["f"].Split('(')[countThat(query["f"], "(")].Split(')')[0];
-                            string title = query["f"].Split(new[] { " - " }, StringSplitOptions.None)[1].Split(new[] {"(" + creator + ")"}, StringSplitOptions.None)[0];
-                            title = title.Substring(0, title.Length - 1);
-                            string version /*difficulty*/ = query["f"].Split('[')[countThat(query["f"], "[")].Split(']')[0];
-                            string fileMd5 = query["c"];
-                            var meme = new Scores(beatmapId, artist, creator, "", title, version, fileMd5, PlayerManager.GetPlayerByUsername(query["us"]).Id, Convert.ToInt32(query["m"]));
-                            //meme.isMapInDatabase();
-                            //outStream.WriteLine(Encoding.UTF8.GetBytes($"{meme.approvedState}|false|0|0|{1+1}"));
-                            //outStream.WriteLine(Encoding.UTF8.GetBytes("0"));
-                            //outStream.WriteLine(Encoding.UTF8.GetBytes($"[bold:0,size:20]{artist}|{title}"));
-                            //outStream.WriteLine(Encoding.UTF8.GetBytes("9.28235"));
-                            //outStream.WriteLine(Encoding.UTF8.GetBytes(ScoreHelper.makeScoreString(0, "why", 420420420, 420, 0, 0, 420, 0, 0, 0, 1, 0, 1, 1, 0)));
+
+                        case "/web/bancho_connect.php":
+                            //NOTE: Added for localhost test
+                            //NOTE: It isn't recommendeded to put handles for /web/ requests on Bancho
+
+                            byte[] bytes = Encoding.Default.GetBytes("br");
+                            outStream.Write(bytes, 0, bytes.Length);
                             break;
-                        #endregion
-                        #region Submit Modular
-                        case "/web/osu-submit-modular.php":
-                            string[] _loginContent;
-                            using (var reader = new StreamReader(context.Request.InputStream, Encoding.UTF8))
-                            {
-                                _loginContent = reader.ReadToEnd().Split('\n');
-                            }
-                            string iv, score, decryptedScore;
-                            byte[] decodedIV;
-                            score = _loginContent[11].Replace("\r", "");
-                            iv = _loginContent[39].Replace("\r", "");
-                            decodedIV = Convert.FromBase64String(iv);
-                            decryptedScore = Helpers.AES.DecryptStringFromBytes_Aes(score, "h89f2-890h2h89b34g-h80g134n90133", ref iv);
-                            break;
-                        #endregion
+
                         default:
                             ShowMOTD:
-                            if (Bancho.MOTD != null)
+                            if (Bancho.MOTD!=null)
                                 outStream.Write(Bancho.MOTD, 0, Bancho.MOTD.Length);
                             break;
                     }
                 }
+
                 if (outStream.Length != 0)
                 {
                     context.Response.ContentType = "text/html; charset=UTF-8";
@@ -262,12 +232,6 @@ namespace osuBancho.HTTP
             sw.Stop();
             Console.WriteLine("Time to complete request: " + sw.Elapsed.ToString());
 #endif
-        }
-
-        static Int32 countThat(string orig, string find)
-        {
-            var s2 = orig.Replace(find, "");
-            return (orig.Length - s2.Length) / find.Length;
         }
     }
 }

@@ -1,6 +1,9 @@
 # osuBancho [![AGPL V3 Licence](https://img.shields.io/badge/license-AGPL%20V3-blue.svg)](LICENCE)
 An osu!Bancho server written in C# for fun and educational purposes.
 
+This product includes GeoLite2 data created by MaxMind, available from
+<a href="http://www.maxmind.com">http://www.maxmind.com</a>.
+
 ## Main things not yet implemented
 - Friends List
 - IRC (Private Message, Channels)
@@ -13,7 +16,6 @@ If you have these things, you will need to import the database `osu.sql` into yo
 To access the Bancho you need insert the following lines in your [hosts](https://en.wikipedia.org/wiki/Hosts_(file)) file:
 ```
 127.0.0.1 osu.ppy.sh
-127.0.0.1 a.ppy.sh
 127.0.0.1 c.ppy.sh
 127.0.0.1 c1.ppy.sh
 ```

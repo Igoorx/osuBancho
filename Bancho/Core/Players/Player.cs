@@ -22,6 +22,7 @@ namespace osuBancho.Core.Players
         public readonly int Id;
         public readonly string Username;
         public string IPAddress;
+        public int LastPacketTime;
 
         public UserTags Tags;
         public PlayModes currentMode;
@@ -29,6 +30,8 @@ namespace osuBancho.Core.Players
         public ModeData[] ModesDatas = new ModeData[4];
         public int TimeZone; //UTC
         public int CountryId;
+        public float Latitude;
+        public float Longitude;
 
         public Player Spectating;
         private readonly ConcurrentDictionary<int, Player> _spectators = new ConcurrentDictionary<int, Player>();
@@ -47,10 +50,9 @@ namespace osuBancho.Core.Players
             Username = (string)dbRow["username"];
             Tags = (UserTags)(int)dbRow["tags"];
             currentMode = (PlayModes)(sbyte)dbRow["last_played_mode"];
-            CountryId = 0/*BR:31*/; //TODO: How get country id? a: maybe make an array - raple
         }
 
-        public bool IrcPlayer = false;
+        public bool IrcPlayer;
         public Player(DataRow dbRow)
         {
             Id = (int)dbRow["id"];
@@ -160,7 +162,8 @@ namespace osuBancho.Core.Players
         }
         //TODO: Should do modedata loading and etc related in another class?
 
-        public bUserStats SerializableStats => new bUserStats(this.Id, this.Status, this.currentModeData.TotalScore,
+        public bUserStats SerializableStats => 
+            new bUserStats(this.Id, this.Status, this.currentModeData.TotalScore,
             this.currentModeData.Accuracy,
             (int) this.currentModeData.PlayCount, this.currentModeData.RankedScore,
             (int) this.currentModeData.RankPosition, this.currentModeData.PerformancePoints);
@@ -193,6 +196,16 @@ namespace osuBancho.Core.Players
 
         public void OnLoggedIn()
         {
+            LastPacketTime = Environment.TickCount;
+
+            var geoData = GeoUtil.GetDataFromIPAddress(this.IPAddress);
+            if (geoData != null)
+            {
+                this.CountryId = GeoUtil.GetCountryId(geoData["country"]["names"]["en"].ToString());
+                this.Latitude = float.Parse(geoData["location"]["latitude"].ToString());
+                this.Longitude = float.Parse(geoData["location"]["longitude"].ToString());
+            }
+
             Status = new bUserStatus(bStatus.Idle, "", "", Mods.None, this.currentMode, 0);
             this.GetModesData();
 
@@ -205,13 +218,14 @@ namespace osuBancho.Core.Players
                 new Command(Commands.OUT_Announcement,
                     "http://puu.sh/jh7t7/20c04029ad.png|https://osu.ppy.sh/news/123912240253"),
                 new Command(Commands.OUT_UpdateUserInfo,
-                    new bUserInfo(this.Id, this.Username, this.TimeZone, (byte)this.CountryId, UserTags.Player, PlayModes.Osu, 1f, 1f, 1)),
+                    new bUserInfo(this.Id, this.Username, this.TimeZone, (byte)this.CountryId, UserTags.Player, PlayModes.Osu, this.Longitude, this.Latitude, 1)),
                 new Command(Commands.OUT_UpdateUserState, this.SerializableStats),
                 new Command(Commands.OUT_UpdateUserInfo,
                     new bUserInfo(-3, "BanchoBot", 0, 0, UserTags.None, PlayModes.Osu, 0, 0, 0))
             });
 
             QueueCommand(Commands.OUT_ChannelJoinSuccess, "#osu");
+            QueueCommand(Commands.OUT_ChannelJoinSuccess, "#broadcast");
 
             //BUG: cant click in BanchoBot on his messages
             QueueCommand(Commands.OUT_IrcMessage,
@@ -227,19 +241,22 @@ namespace osuBancho.Core.Players
 
         public void OnPacketReceived(Stream receivedStream)
         {
+            this.LastPacketTime = Environment.TickCount;
+
             while (!receivedStream.IsInEnd())
             {
                 Commands command = (Commands) receivedStream.ReadUInt16();
-                receivedStream.Position += 1;
-                uint cmdLen = receivedStream.ReadUInt32();
-                if (cmdLen > receivedStream.Length - receivedStream.Position)
+                receivedStream.Position += 1; //skip 1 byte
+
+                uint packetLength = receivedStream.ReadUInt32();
+                if (packetLength > receivedStream.Length - receivedStream.Position)
                 {
                     Debug.WriteLine("Invalid packet!! x.x");
                     PlayerManager.DisconnectPlayer(this.Id, DisconnectReason.Kick);
                     return;
                 }
 
-                SerializationReader reader = new SerializationReader(new MemoryStream(receivedStream.Read((int)cmdLen)));
+                var reader = new SerializationReader(new MemoryStream(receivedStream.Read((int)packetLength)));
 
                 Debug.WriteLine("[{2}] Command received: {0} [{1}]", command.ToString().Contains("_")?command.ToString().Split('_')[1]:command.ToString(),
                             Utils.ByteArrayRepr((reader.BaseStream as MemoryStream).ToArray()), this.Username);
@@ -270,22 +287,22 @@ namespace osuBancho.Core.Players
                                 this.QueueCommand(Commands.OUT_Ping, 0); //lol, i can use this for ban
                                 break;
                             case "!togglelock":
-                                this.currentMatch.SetLocked(!this.currentMatch.Locked);
+                                this.currentMatch?.SetLocked(!this.currentMatch.Locked);
                                 break;
                             case "!abort":
-                                this.currentMatch.FinishMatch(true);
+                                this.currentMatch?.FinishMatch(true);
                                 break;
                             case "!start":
-                                this.currentMatch.StartMatch();
+                                this.currentMatch?.StartMatch();
                                 break;
                             case "!givemehost":
-                                this.currentMatch.SetHost(this);
+                                this.currentMatch?.SetHost(this);
                                 break;
                             case "!targetmod":
-                                this.currentMatch.SetMods(Mods.Target);
+                                this.currentMatch?.SetMods(Mods.Target);
                                 break;
                             case "!automod":
-                                this.currentMatch.SetMods(Mods.Autoplay); //does nothing in gameplay >_>
+                                this.currentMatch?.SetMods(Mods.Autoplay); //does nothing in gameplay >_>
                                 break;
                         }
                         break;
@@ -312,17 +329,14 @@ namespace osuBancho.Core.Players
                             this.Spectating.RemoveSpectator(this.Id);
                             this.Spectating = null;
                         }
-                        else
-                        {
-                            player.AddSpectator(this);
-                            Spectating = player;
-                        }
+                        player.AddSpectator(this);
+                        Spectating = player;
                         //TODO: Spectator channel
-                            break;
+                        //TODO: Spectator see others spectators
+                        break;
                     }
                     case Commands.IN_StopSpectate:
-                        if (this.Spectating == null) break;
-                        this.Spectating.RemoveSpectator(this.Id);
+                        this.Spectating?.RemoveSpectator(this.Id);
                         this.Spectating = null;
                         break;
                     case Commands.IN_SpectateFrames:
@@ -358,32 +372,31 @@ namespace osuBancho.Core.Players
                             QueueCommand(Commands.OUT_MatchJoinFail);
                         break;
                     case Commands.IN_MatchLeave: 
-                        if (this.currentMatch!=null)
-                            currentMatch.RemovePlayer(this.Id);
+                        currentMatch?.RemovePlayer(this.Id);
                         break;
                     case Commands.IN_MatchChangeSlot:
-                        if (this.currentMatch != null && !this.currentMatch.Locked)
+                        if (this.currentMatch?.Locked == false)
                             currentMatch.MovePlayerSlot(this.Id, reader.ReadInt32());
                         break;
                     case Commands.IN_MatchReady:
-                        if (this.currentMatch != null && !this.currentMatch.Locked)
+                        if (this.currentMatch?.Locked == false)
                             currentMatch.SetReady(true, this.Id);
                         break;
                     case Commands.IN_MatchNotReady: //55, not in order but is better here
-                        if (this.currentMatch != null && !this.currentMatch.Locked)
+                        if (this.currentMatch?.Locked == false)
                             currentMatch.SetReady(false, this.Id);
                         break;
                     case Commands.IN_MatchLockSlot:
-                        if (this.currentMatch != null && this.currentMatch.IsHost(this.Id))
+                        if (this.currentMatch?.IsHost(this.Id) == true)
                             currentMatch.LockSlot(reader.ReadInt32());
                         break;
                     case Commands.IN_MatchChangeSettings:
                     case Commands.IN_MatchChangePassword:
-                        if (this.currentMatch != null && this.currentMatch.IsHost(this.Id))
+                        if (this.currentMatch?.IsHost(this.Id) == true)
                             currentMatch.SetMatchData(new bMatchData(reader));
                         break;
                     case Commands.IN_MatchStart:
-                        if (this.currentMatch != null && this.currentMatch.IsHost(this.Id))
+                        if (this.currentMatch?.IsHost(this.Id) == true)
                             currentMatch.StartMatch();
                         break;
                     case Commands.IN_MatchScoreUpdate:
@@ -404,7 +417,7 @@ namespace osuBancho.Core.Players
                         }
                         break;
                     case Commands.IN_MatchChangeMods:
-                        if (this.currentMatch != null && !this.currentMatch.Locked)
+                        if (this.currentMatch?.Locked == false)
                             this.currentMatch.SetMods(this.Id, (Mods)reader.ReadInt32());
                         break;
                     case Commands.IN_MatchLoadComplete:
@@ -415,16 +428,14 @@ namespace osuBancho.Core.Players
                         }
                         break;
                     case Commands.IN_MatchNoBeatmap:
-                        if (this.currentMatch != null)
-                            currentMatch.SetHasMap(false, this.Id);
+                        currentMatch?.SetHasMap(false, this.Id);
                         break;
                     case Commands.IN_MatchFailed:
                         if (this.currentMatch != null && this.IsMultiplaying)
                             currentMatch.OnPlayerFail(this.Id);
                         break;
                     case Commands.IN_MatchHasBeatmap:
-                        if (this.currentMatch != null)
-                            currentMatch.SetHasMap(true, this.Id);
+                        currentMatch?.SetHasMap(true, this.Id);
                         break;
                     case Commands.IN_MatchSkipRequest:
                         if (this.currentMatch != null && this.IsMultiplaying)
@@ -434,7 +445,7 @@ namespace osuBancho.Core.Players
                         }
                         break;
                     case Commands.IN_MatchTransferHost:
-                        if (this.currentMatch != null && this.currentMatch.IsHost(this.Id))
+                        if (this.currentMatch?.IsHost(this.Id) == true)
                             currentMatch.SetHost(reader.ReadInt32());
                         break;
                     case Commands.IN_GetUsersStats:
@@ -462,7 +473,7 @@ namespace osuBancho.Core.Players
                             if (player != null)
                                 QueueCommand(Commands.OUT_UpdateUserInfo,
                                     new bUserInfo(player.Id, player.Username, player.TimeZone, (byte) player.CountryId,
-                                        player.Tags, player.currentMode, 0, 0, 1));
+                                        player.Tags, player.currentMode, player.Longitude, player.Latitude, 1));
                             else
                                 QueueCommand(Commands.OUT_UserQuit, playerId);
                         }

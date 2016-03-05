@@ -23,7 +23,7 @@ namespace osuBancho.Core.Lobby.Matches
         private int _playFinishCount;
         private int _skipRequestCount;
         private int _loadFinishCount;
-        private object _matchLock = new object();
+        private readonly object _matchLock = new object();
 
         public Match(int id, Player owner, bMatchData matchData)
         {
@@ -261,15 +261,15 @@ namespace osuBancho.Core.Lobby.Matches
             Mods mods = newMatchData.activeMods;
             if (toggledToFreeMod)
             {
+                newMatchData.activeMods = Mods.None;
                 if (mods.HasFlag(Mods.DoubleTime))
                 {
                     mods &= ~Mods.DoubleTime;
-                    newMatchData.activeMods = Mods.DoubleTime;
-                }
-                if (mods.HasFlag(Mods.Nightcore))
-                {
-                    mods &= ~Mods.Nightcore;
-                    newMatchData.activeMods = Mods.Nightcore;
+                    if (mods.HasFlag(Mods.Nightcore))
+                    {
+                        mods &= ~Mods.Nightcore;
+                        newMatchData.activeMods = Mods.DoubleTime | Mods.Nightcore;
+                    } else newMatchData.activeMods = Mods.DoubleTime;
                 }
                 if (mods.HasFlag(Mods.HalfTime))
                 {
@@ -288,7 +288,7 @@ namespace osuBancho.Core.Lobby.Matches
                     newMatchData.slotStatus[i] != SlotStatus.NoMap) newMatchData.slotStatus[i] = SlotStatus.NotReady;
                 if (toggledToFreeMod) newMatchData.slotMods[i] = mods;
                 if (toggledToTeamMode) newMatchData.slotTeam[i] = i%2 == 0 ? SlotTeams.Blue : SlotTeams.Red;
-                if (toggledToNormalMode) newMatchData.slotTeam[i] = SlotTeams.Neutral;
+                else if (toggledToNormalMode) newMatchData.slotTeam[i] = SlotTeams.Neutral;
             }
 
             if (newMatchData.gamePassword == "") newMatchData.gamePassword = null;
@@ -364,22 +364,16 @@ namespace osuBancho.Core.Lobby.Matches
                     if (mods.HasFlag(Mods.DoubleTime))
                     {
                         mods &= ~Mods.DoubleTime;
-                        matchData.activeMods = Mods.DoubleTime;
                         removePlayersReady = true;
+                        if (mods.HasFlag(Mods.Nightcore))
+                        {
+                            mods &= ~Mods.Nightcore;
+                            matchData.activeMods = Mods.DoubleTime | Mods.Nightcore;
+                        } else matchData.activeMods = Mods.DoubleTime;
                     }
-                    else if (matchData.activeMods == Mods.DoubleTime)
+                    else if (matchData.activeMods == Mods.DoubleTime ||
+                             matchData.activeMods == (Mods.DoubleTime | Mods.Nightcore))
                         matchData.activeMods = Mods.None;
-                    if (mods.HasFlag(Mods.Nightcore))
-                    {
-                        mods &= ~Mods.Nightcore;
-                        matchData.activeMods = Mods.Nightcore;
-                        removePlayersReady = true;
-                    }
-                    else
-                    {
-                        if (matchData.activeMods == Mods.Nightcore)
-                            matchData.activeMods = Mods.None;
-                    }
                     if (mods.HasFlag(Mods.HalfTime))
                     {
                         mods &= ~Mods.HalfTime;

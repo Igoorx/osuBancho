@@ -130,27 +130,23 @@ namespace osuBancho.Core.Players
                 //TODO: Improve this?
                 QueueCommandForAll(Commands.OUT_UserQuit, new bIRCQuit(player.Id, bIRCQuit.Enum1.const_0));
 
-            Debug.WriteLine("{0} has disconnected ({1})", player.Username, reason);
+            Debug.WriteLine("{0} has disconnected ({1})", player?.Username, reason);
         }
 
         public static async Task<bool> OnPacketReceived(string Token, Stream receivedStream, MemoryStream outStream)
         {
             if (receivedStream.Length < 7)
-            {
                 return false;
-            }
+
             Player player = GetPlayerBySessionToken(Token);
 
-            if (player != null)
-            {
-                receivedStream.Position = 0;
+            if (player == null) return false;
+            receivedStream.Position = 0;
                
-                await Task.Run(() => player.OnPacketReceived(receivedStream));
-                player.SerializeCommands(outStream);
+            await Task.Run(() => player.OnPacketReceived(receivedStream));
+            player.SerializeCommands(outStream);
                 
-                return true;
-            }
-            return false;
+            return true;
         }
     }
 }
