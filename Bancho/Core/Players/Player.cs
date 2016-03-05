@@ -22,6 +22,7 @@ namespace osuBancho.Core.Players
         public readonly int Id;
         public readonly string Username;
         public string IPAddress;
+        public int LastPacketTime;
 
         public UserTags Tags;
         public PlayModes currentMode;
@@ -29,6 +30,8 @@ namespace osuBancho.Core.Players
         public ModeData[] ModesDatas = new ModeData[4];
         public int TimeZone; //UTC
         public int CountryId;
+        public float Latitude;
+        public float Longitude;
 
         public Player Spectating;
         private readonly ConcurrentDictionary<int, Player> _spectators = new ConcurrentDictionary<int, Player>();
@@ -47,10 +50,9 @@ namespace osuBancho.Core.Players
             Username = (string)dbRow["username"];
             Tags = (UserTags)(int)dbRow["tags"];
             currentMode = (PlayModes)(sbyte)dbRow["last_played_mode"];
-            CountryId = 0/*BR:31*/; //TODO: How get country id? a: maybe make an array - raple
         }
 
-        public bool IrcPlayer = false;
+        public bool IrcPlayer;
         public Player(DataRow dbRow)
         {
             Id = (int)dbRow["id"];
@@ -194,6 +196,16 @@ namespace osuBancho.Core.Players
 
         public void OnLoggedIn()
         {
+            LastPacketTime = Environment.TickCount;
+
+            var geoData = GeoUtil.GetDataFromIPAddress(this.IPAddress);
+            if (geoData != null)
+            {
+                this.CountryId = GeoUtil.GetCountryId(geoData["country"]["names"]["en"].ToString());
+                this.Latitude = float.Parse(geoData["location"]["latitude"].ToString());
+                this.Longitude = float.Parse(geoData["location"]["longitude"].ToString());
+            }
+
             Status = new bUserStatus(bStatus.Idle, "", "", Mods.None, this.currentMode, 0);
             this.GetModesData();
 
@@ -206,13 +218,14 @@ namespace osuBancho.Core.Players
                 new Command(Commands.OUT_Announcement,
                     "http://puu.sh/jh7t7/20c04029ad.png|https://osu.ppy.sh/news/123912240253"),
                 new Command(Commands.OUT_UpdateUserInfo,
-                    new bUserInfo(this.Id, this.Username, this.TimeZone, (byte)this.CountryId, UserTags.Player, PlayModes.Osu, 1f, 1f, 1)),
+                    new bUserInfo(this.Id, this.Username, this.TimeZone, (byte)this.CountryId, UserTags.Player, PlayModes.Osu, this.Longitude, this.Latitude, 1)),
                 new Command(Commands.OUT_UpdateUserState, this.SerializableStats),
                 new Command(Commands.OUT_UpdateUserInfo,
                     new bUserInfo(-3, "BanchoBot", 0, 0, UserTags.None, PlayModes.Osu, 0, 0, 0))
             });
 
             QueueCommand(Commands.OUT_ChannelJoinSuccess, "#osu");
+            QueueCommand(Commands.OUT_ChannelJoinSuccess, "#broadcast");
 
             //BUG: cant click in BanchoBot on his messages
             QueueCommand(Commands.OUT_IrcMessage,
@@ -228,6 +241,8 @@ namespace osuBancho.Core.Players
 
         public void OnPacketReceived(Stream receivedStream)
         {
+            this.LastPacketTime = Environment.TickCount;
+
             while (!receivedStream.IsInEnd())
             {
                 Commands command = (Commands) receivedStream.ReadUInt16();
@@ -458,7 +473,7 @@ namespace osuBancho.Core.Players
                             if (player != null)
                                 QueueCommand(Commands.OUT_UpdateUserInfo,
                                     new bUserInfo(player.Id, player.Username, player.TimeZone, (byte) player.CountryId,
-                                        player.Tags, player.currentMode, 0, 0, 1));
+                                        player.Tags, player.currentMode, player.Longitude, player.Latitude, 1));
                             else
                                 QueueCommand(Commands.OUT_UserQuit, playerId);
                         }

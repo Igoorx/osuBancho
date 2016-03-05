@@ -23,7 +23,7 @@ namespace osuBancho.Core.Lobby.Matches
         private int _playFinishCount;
         private int _skipRequestCount;
         private int _loadFinishCount;
-        private object _matchLock = new object();
+        private readonly object _matchLock = new object();
 
         public Match(int id, Player owner, bMatchData matchData)
         {

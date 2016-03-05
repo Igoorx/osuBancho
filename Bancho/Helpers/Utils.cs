@@ -9,6 +9,9 @@ namespace osuBancho.Helpers
             return (float)((double)((count50 * 50)+(count100 * 100)+(count300 * 300)) / (double)((count50 + count100 + count300 + countMiss) * 300));
         }
 
+        /// <summary>
+        /// Return a string containing a printable representation of an byte array
+        /// </summary>
         public static string ByteArrayRepr(byte[] bytes)
         {
             int pos = 0;

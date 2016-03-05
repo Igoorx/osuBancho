@@ -130,7 +130,7 @@ namespace osuBancho.Core.Players
                 //TODO: Improve this?
                 QueueCommandForAll(Commands.OUT_UserQuit, new bIRCQuit(player.Id, bIRCQuit.Enum1.const_0));
 
-            Debug.WriteLine("{0} has disconnected ({1})", player.Username, reason);
+            Debug.WriteLine("{0} has disconnected ({1})", player?.Username, reason);
         }
 
         public static async Task<bool> OnPacketReceived(string Token, Stream receivedStream, MemoryStream outStream)

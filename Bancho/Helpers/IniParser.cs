@@ -13,6 +13,7 @@ namespace osuBancho.Helpers
         public static string DefaultIni =
             @"[Bancho]
 Port = 80
+Restricted = 0
 
 [DatabaseConnection]
 User = root
@@ -22,7 +23,8 @@ Server = 127.0.0.1
 Port = 3306
 
 // Not recommended to edit
-Timeout = 10
+ConnectionTimeout = 10
+CommandTimeout = 30
 MaximumPoolSize = 250
 MinimumPoolSize = 10
 ";
@@ -33,11 +35,11 @@ MinimumPoolSize = 10
         private object m_Lock = new object();
 
         // *** File name ***
-        private string m_FileName = null;
+        private string m_FileName;
         internal string FileName => m_FileName;
 
         // *** Lazy loading flag ***
-        private bool m_Lazy = false;
+        private bool m_Lazy;
 
         // *** Automatic flushing flag ***
         private bool m_AutoFlush = false;
@@ -159,7 +161,7 @@ MinimumPoolSize = 10
                 finally
                 {
                     // *** Cleanup: close file ***
-                    if (sr != null) sr.Close();
+                    sr?.Close();
                     sr = null;
                 }
             }

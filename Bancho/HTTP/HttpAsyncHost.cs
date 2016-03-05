@@ -61,7 +61,7 @@ namespace osuBancho.HTTP
                     return;
                 }
 
-                Console.WriteLine("Bancho is UP!\n");
+                Console.WriteLine("Bancho is UP!" + Environment.NewLine);
 
                 // Accept connections:
                 // Higher values mean more connections can be maintained yet at a much slower average response time; fewer connections will be rejected.
