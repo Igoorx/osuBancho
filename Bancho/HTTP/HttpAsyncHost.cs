@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -10,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using osuBancho.Core;
 using osuBancho.Core.Players;
+using osuBancho.Core.Scores;
 using osuBancho.Helpers;
 
 namespace osuBancho.HTTP
@@ -186,15 +188,34 @@ namespace osuBancho.HTTP
                         case "/web/bancho_connect.php":
                             //NOTE: Added for localhost test
                             //NOTE: It isn't recommendeded to put handles for /web/ requests on Bancho
-
+                            //RENOTE: I do know that it isn't but it would take the need for additional webstorage and web based stuff away - rapleaqn
                             byte[] bytes = Encoding.Default.GetBytes("br");
                             outStream.Write(bytes, 0, bytes.Length);
                             break;
-
+#if DEBUG
+                        case "/web/osu-osz2-getscores.php":
+                            NameValueCollection query = context.Request.QueryString;
+                            int beatmapId = Convert.ToInt32(query["i"]);
+                            string artist = query["f"].Split(new[] { " - " }, StringSplitOptions.None)[0];
+                            string creator = query["f"].Split('(')[Counting.Count(query["f"], "(")].Split(')')[0];
+                            string title = query["f"].Split(new[] { " - " }, StringSplitOptions.None)[1].Split(new[] { "(" + creator + ")" }, StringSplitOptions.None)[0];
+                            title = title.Substring(0, title.Length - 1);
+                            string version /*difficulty*/ = query["f"].Split('[')[Counting.Count(query["f"], "[")].Split(']')[0];
+                            string fileMd5 = query["c"];
+                            var deezNuts = new Scores(beatmapId, artist, creator, "", title, version, fileMd5, 0, 0);
+                            byte[] bytes1 = Encoding.Default.GetBytes($"2|false|648339|{beatmapId}|0\r\n0\r\n[bold:0,size:20]you are a|faggot\r\n9.28235\r\n");
+                            byte[] bytes2 = Encoding.Default.GetBytes( ScoreHelper.makeScoreString(0, "rrtyui", 420420420, 420, 0, 0, 420, 0, 0, 0, 1, 0, 2, 1, 0) + "\r\n");
+                            byte[] bytes3 = Encoding.Default.GetBytes(ScoreHelper.makeScoreString(0, "dex and green are cute", 420420419, 420, 0, 0, 420, 0, 0, 0, 1, 0, 3, 1, 0) + "\r\n");
+                            outStream.Write(bytes1, 0, bytes1.Length);
+                            outStream.Write(bytes2, 0, bytes2.Length);
+                            outStream.Write(bytes2, 0, bytes2.Length);
+                            outStream.Write(bytes3, 0, bytes3.Length);
+                            break;
+#endif
                         default:
                             ShowMOTD:
                             if (Bancho.MOTD!=null)
-                                outStream.Write(Bancho.MOTD, 0, Bancho.MOTD.Length);
+                                outStream.Write(buffer: Bancho.MOTD, offset: 0, count: Bancho.MOTD.Length);
                             break;
                     }
                 }

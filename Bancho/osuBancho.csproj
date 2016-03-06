@@ -63,9 +63,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Bancho.cs" />
-    <Compile Include="Helpers\CanNotAccessBanchoException.cs" />
-    <Compile Include="Helpers\IniParser.cs" />
-    <Compile Include="Helpers\GeoUtil.cs" />
+    <Compile Include="Core\Helpers\CanNotAccessBanchoException.cs" />
+    <Compile Include="Core\Helpers\Counting.cs" />
+    <Compile Include="Core\Helpers\IniParser.cs" />
+    <Compile Include="Core\Helpers\GeoUtil.cs" />
+    <Compile Include="Core\Helpers\ScoreHelper.cs" />
+    <Compile Include="Core\Scores\Scores.cs" />
     <Compile Include="IRC\Channels\Channel.cs" />
     <Compile Include="IRC\Channels\ChannelManager.cs" />
     <Compile Include="Core\Command.cs" />
@@ -105,10 +108,10 @@
     <Compile Include="Database\Interfaces\IDatabaseClient.cs" />
     <Compile Include="Database\Interfaces\IQueryAdapter.cs" />
     <Compile Include="Database\Interfaces\IRegularQueryAdapter.cs" />
-    <Compile Include="Helpers\Extensions.cs" />
-    <Compile Include="Helpers\SerializationReader.cs" />
-    <Compile Include="Helpers\SerializationWriter.cs" />
-    <Compile Include="Helpers\Utils.cs" />
+    <Compile Include="Core\Helpers\Extensions.cs" />
+    <Compile Include="Core\Helpers\SerializationReader.cs" />
+    <Compile Include="Core\Helpers\SerializationWriter.cs" />
+    <Compile Include="Core\Helpers\Utils.cs" />
     <Compile Include="Core\Players\Player.cs" />
     <Compile Include="Core\Players\PlayerManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
