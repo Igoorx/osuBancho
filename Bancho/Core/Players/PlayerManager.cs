@@ -103,7 +103,8 @@ namespace osuBancho.Core.Players
                 QueueCommandForAll(Commands.OUT_UserForLoad, player.Id, player.Id); //NOTE: Osu automatic logout when see that an user with same id has logged in
             }
 
-            PlayersByToken.TryAdd(player.Token, player);
+            if (PlayersByToken.TryAdd(player.Token, player))
+                QueueCommandForAll(Commands.OUT_IrcMessage, new bIRCMessage("BanchoBot", "#broadcast", $"New session: {player.Token}") { SenderId = 3 }); //NOTE: Test message
             return true;
         }
 
@@ -111,11 +112,11 @@ namespace osuBancho.Core.Players
         {
             Player player;
             if (!PlayersById.TryRemove(playerId, out player)) return;
-            PlayersByToken.TryRemove(player.Token, out player);
+            if (PlayersByToken.TryRemove(player.Token, out player))
+                QueueCommandForAll(Commands.OUT_IrcMessage, new bIRCMessage("BanchoBot", "#broadcast", $"Destroyed session: {player.Token}") { SenderId = 3 }); //NOTE: Test message
 
             player.OnDisconnected();
-
-            //TODO: Improve this?
+            //NOTE: Improve this?
             QueueCommandForAll(Commands.OUT_UserQuit, new bIRCQuit(playerId, bIRCQuit.Enum1.const_0));
 
             Debug.WriteLine("{0} has disconnected ({1})", player.Username, reason);
@@ -123,12 +124,16 @@ namespace osuBancho.Core.Players
 
         public static void DisconnectPlayer(Player player, DisconnectReason reason)
         {
-            if (PlayersByToken.TryRemove(player.Token, out player))
-                player.OnDisconnected();
+            Player _player;
+            if (PlayersByToken.TryRemove(player.Token, out _player))
+                QueueCommandForAll(Commands.OUT_IrcMessage, new bIRCMessage("BanchoBot", "#broadcast", $"Destroyed session: {player.Token}") { SenderId = 3 }); //NOTE: Test message
 
             if (PlayersById.TryRemove(player.Id, out player))
-                //TODO: Improve this?
+            {
+                player.OnDisconnected();
+                //NOTE: Improve this?
                 QueueCommandForAll(Commands.OUT_UserQuit, new bIRCQuit(player.Id, bIRCQuit.Enum1.const_0));
+            }
 
             Debug.WriteLine("{0} has disconnected ({1})", player?.Username, reason);
         }

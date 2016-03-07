@@ -38,12 +38,7 @@ namespace osuBancho
             ServerStarted = DateTime.Now;
 
             if (File.Exists("MOTD.txt"))
-            {
-                var motd = File.ReadAllText("MOTD.txt");
-                Console.WriteLine(motd.Substring(0, motd.LastIndexOf("\r\n\r\n")) + Environment.NewLine);
-
-                MOTD = Encoding.Default.GetBytes($"<pre>\n{motd.InsertHrefInUrls()}\n</pre>");
-            }
+                MOTD = Encoding.Default.GetBytes($"<pre>\n{File.ReadAllText("MOTD.txt").InsertHrefInUrls()}\n</pre>");
 
             Console.Write("Initializing Bancho");
             if (IsDebug) Console.Write(" in debug mode");

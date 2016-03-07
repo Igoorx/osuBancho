@@ -330,6 +330,8 @@ namespace osuBancho.Core.Lobby.Matches
                 matchData.slotMods[slotPos] = Mods.None;
             }
             SendMatchUpdate();
+
+            IsFull = CheckIsFull();
         }
 
         public void MovePlayerSlot(int playerId, int slotPos)

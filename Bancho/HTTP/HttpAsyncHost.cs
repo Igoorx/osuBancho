@@ -1,4 +1,6 @@
-﻿using System;
+﻿//#define MEASUREREQ
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -50,7 +52,7 @@ namespace osuBancho.HTTP
                     // Start the HTTP listener:
                     _listener.Start();
                 }
-                catch (HttpListenerException hlex) when (hlex.ErrorCode == 32)
+                catch (HttpListenerException hlex) when (hlex.ErrorCode == 32 || hlex.ErrorCode == 183)
                 {
                     Console.Error.WriteLine("The desired port for the Bancho is in use.");
                     return;
@@ -154,7 +156,7 @@ namespace osuBancho.HTTP
 
                                             outStream.WriteLoginResult(LoginResult.Failed);
                                         }
-                                    }
+                                    } else context.Response.StatusCode = 403;
                                 }
                                 else
                                 {
@@ -230,7 +232,7 @@ namespace osuBancho.HTTP
 
 #if MEASUREREQ
             sw.Stop();
-            Console.WriteLine("Time to complete request: " + sw.Elapsed.ToString());
+            Console.WriteLine("Time to complete request: " + sw.ElapsedMilliseconds + "ms");
 #endif
         }
     }

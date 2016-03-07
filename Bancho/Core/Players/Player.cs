@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using osuBancho.Core.Lobby;
@@ -28,7 +29,9 @@ namespace osuBancho.Core.Players
         public PlayModes currentMode;
         public bUserStatus Status;
         public ModeData[] ModesDatas = new ModeData[4];
+
         public int TimeZone; //UTC
+        public string Language;
         public int CountryId;
         public float Latitude;
         public float Longitude;
@@ -81,8 +84,9 @@ namespace osuBancho.Core.Players
 
         public void SerializeCommands(Stream outStream)
         {
+            if (CommandQueue.IsEmpty) return;
             var writer = new SerializationWriter(outStream);
-
+            
             Command command;
             while (outStream.Length < 6144L && this.CommandQueue.TryDequeue(out command))
             {
@@ -107,6 +111,7 @@ namespace osuBancho.Core.Players
                 writer.Seek(0, SeekOrigin.End);
             }
 
+            //Debug.WriteLine($"Sent: {Utils.ByteArrayRepr((writer.BaseStream as MemoryStream).ToArray())}");
             outStream.Position = 0;
         }
 
@@ -176,23 +181,52 @@ namespace osuBancho.Core.Players
 
         public void AddSpectator(Player spectator)
         {
-            if (_spectators.TryAdd(spectator.Id, spectator))
-                QueueCommand(Commands.OUT_SpectatorJoined, spectator.Id);
+            if (!_spectators.TryAdd(spectator.Id, spectator)) return;
+
+            foreach (Player cspectator in Spectators)
+            {
+                spectator.QueueCommand(Commands.OUT_FellowSpectatorJoined, cspectator.Id);
+                cspectator.QueueCommand(Commands.OUT_FellowSpectatorJoined, spectator.Id);
+            }
+            QueueCommand(Commands.OUT_SpectatorJoined, spectator.Id);
         }
 
         public void RemoveSpectator(int spectatorId)
         {
             Player spectator;
-            if (_spectators.TryRemove(spectatorId, out spectator))
-                QueueCommand(Commands.OUT_SpectatorLeft, spectatorId);
+            if (!_spectators.TryRemove(spectatorId, out spectator)) return;
+
+            foreach (Player cspectator in Spectators)
+            {
+                cspectator.QueueCommand(Commands.OUT_FellowSpectatorLeft, spectatorId);
+            }
+            QueueCommand(Commands.OUT_SpectatorLeft, spectatorId);
         }
 
         public void RemoveSpectator(Player spectator)
         {
             Player _spectator;
-            if (_spectators.TryRemove(spectator.Id, out _spectator))
-                QueueCommand(Commands.OUT_SpectatorLeft, spectator.Id);
+            if (!_spectators.TryRemove(spectator.Id, out _spectator)) return;
+
+            foreach (Player cspectator in Spectators)
+            {
+                cspectator.QueueCommand(Commands.OUT_FellowSpectatorLeft, spectator.Id);
+            }
+            QueueCommand(Commands.OUT_SpectatorLeft, spectator.Id);
         }
+        
+        public void SpectatorNoHasMap(int spectatorId)
+        {
+            Player _spectator;
+            if (!_spectators.TryGetValue(spectatorId, out _spectator)) return;
+            
+            foreach (Player cspectator in Spectators)
+            {
+                cspectator.QueueCommand(Commands.OUT_SpectatorCantSpectate, spectatorId);
+            }
+            QueueCommand(Commands.OUT_SpectatorCantSpectate, spectatorId);
+        }
+
 
         public void OnLoggedIn()
         {
@@ -202,6 +236,10 @@ namespace osuBancho.Core.Players
             if (geoData != null)
             {
                 this.CountryId = GeoUtil.GetCountryId(geoData["country"]["names"]["en"].ToString());
+                this.Language = CultureInfo //NOTE: This can be used to an translation ..
+                    .GetCultures(CultureTypes.AllCultures)
+                    .First(c => c.Name.EndsWith(geoData["country"]["iso_code"].ToString()))
+                    .Name;
                 this.Latitude = float.Parse(geoData["location"]["latitude"].ToString());
                 this.Longitude = float.Parse(geoData["location"]["longitude"].ToString());
             }
@@ -227,9 +265,10 @@ namespace osuBancho.Core.Players
             QueueCommand(Commands.OUT_ChannelJoinSuccess, "#osu");
             QueueCommand(Commands.OUT_ChannelJoinSuccess, "#broadcast");
 
-            //BUG: cant click in BanchoBot on his messages
+            //FBUG: cant click in BanchoBot on his messages 
+            //FIXED? Probally negative id is only sent in UpdateUserInfo ..
             QueueCommand(Commands.OUT_IrcMessage,
-                new bIRCMessage("BanchoBot", "#osu", "Welcome to the Bancho!") {SenderId = -3}); //NOTE: This is a test message
+                new bIRCMessage("BanchoBot", "#osu", "Welcome to the Bancho!") {SenderId = 3}); //NOTE: This is a test message
         }
 
         public void OnDisconnected()
@@ -352,7 +391,7 @@ namespace osuBancho.Core.Players
                         }
                         break;
                     case Commands.IN_CantSpectate: //No has map
-                        this.Spectating?.QueueCommand(Commands.OUT_SpectatorCantSpectate, this.Id);
+                        this.Spectating?.SpectatorNoHasMap(this.Id);
                         break;
                     case Commands.IN_IrcMessagePrivate:
                         //TODO: IrcMessagePrivate
@@ -382,7 +421,7 @@ namespace osuBancho.Core.Players
                         if (this.currentMatch?.Locked == false)
                             currentMatch.SetReady(true, this.Id);
                         break;
-                    case Commands.IN_MatchNotReady: //55, not in order but is better here
+                    case Commands.IN_MatchNotReady:
                         if (this.currentMatch?.Locked == false)
                             currentMatch.SetReady(false, this.Id);
                         break;
@@ -491,6 +530,8 @@ namespace osuBancho.Core.Players
                     case Commands.IN_FriendRemove:
                         //TODO: FriendRemove
                         break;
+                    //TODO: UserToggleBlockNonFriendPM
+                    //TODO: BanchoSwitchTourneyServer
                     case Commands.IN_InvitePlayer:
                     {
                         Player player = PlayerManager.GetPlayerById(reader.ReadInt32()); 
