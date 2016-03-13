@@ -2,7 +2,7 @@
 using MaxMind.Db;
 using Newtonsoft.Json.Linq;
 
-namespace osuBancho.Helpers
+namespace osuBancho.Core.Helpers
 {
     static class GeoUtil
     {

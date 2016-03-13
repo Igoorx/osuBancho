@@ -9,7 +9,9 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using osuBancho.Core;
+using osuBancho.Core.Helpers;
 using osuBancho.Core.Players;
 using osuBancho.Core.Scores;
 using osuBancho.Helpers;
@@ -202,15 +204,48 @@ namespace osuBancho.HTTP
                             title = title.Substring(0, title.Length - 1);
                             string version /*difficulty*/ = query["f"].Split('[')[Counting.Count(query["f"], "[")].Split(']')[0];
                             string fileMd5 = query["c"];
-                            var deezNuts = new Scores(beatmapId, artist, creator, "", title, version, fileMd5, 0, 0);
-                            byte[] bytes1 = Encoding.Default.GetBytes($"2|false|648339|{beatmapId}|0\r\n0\r\n[bold:0,size:20]you are a|faggot\r\n9.28235\r\n");
-                            byte[] bytes2 = Encoding.Default.GetBytes( ScoreHelper.makeScoreString(0, "rrtyui", 420420420, 420, 0, 0, 420, 0, 0, 0, 1, 0, 2, 1, 0) + "\r\n");
-                            byte[] bytes3 = Encoding.Default.GetBytes(ScoreHelper.makeScoreString(0, "dex and green are cute", 420420419, 420, 0, 0, 420, 0, 0, 0, 1, 0, 3, 1, 0) + "\r\n");
-                            outStream.Write(bytes1, 0, bytes1.Length);
-                            outStream.Write(bytes2, 0, bytes2.Length);
-                            outStream.Write(bytes2, 0, bytes2.Length);
-                            outStream.Write(bytes3, 0, bytes3.Length);
+                            var deezNuts = new Scores(beatmapId, artist, creator, "", title, version, fileMd5, 0, 0, query["us"]);
+                            deezNuts.getScores();
+                            byte[] bytes1 = Encoding.Default.GetBytes($"2|false|648339|{beatmapId}|0\r\n0\r\n[bold:0,size:20]{artist}|{title}\r\n9.28235\r\n");
+                            byte[] bytes2 = Encoding.Default.GetBytes("\n");
+                            outStream.Write(bytes1, 0, bytes1.Length); //Map Related
+                            outStream.Write(bytes2, 0, bytes2.Length); //My Score
+                            byte[] memememememeBytes = Encoding.Default.GetBytes("\n"); //OTher Scores
+                            outStream.Write(memememememeBytes, 0, memememememeBytes.Length);
                             break;
+
+                        case "/web/osu-submit-modular.php":
+                            BeatmapManager.GetAllBeatmaps();
+                            string[] _loginContent;
+                            using (var reader = new StreamReader(context.Request.InputStream, Encoding.UTF8))
+                            {
+                                _loginContent = reader.ReadToEnd().Split('\n');
+                            }
+                            string iv, score, decryptedScore, passwordhash;
+                            byte[] decodedIV;
+                            int ivindex = 0, scoreindex = 0, passwordindex = 0;
+                            bool ivfound = false, scorefound = false, passwordfound = false;
+                            foreach (string s in _loginContent)
+                            {
+                                if (s != "Content-Disposition: form-data; name=\"iv\"\r" && !ivfound) { 
+                                    ivindex++;
+                                }else
+                                    ivfound = true;
+                                if (s != "Content-Disposition: form-data; name=\"score\"\r" && !scorefound)
+                                    scoreindex++;
+                                else
+                                    scorefound = true;
+                                if (s != "Content-Disposition: form-data; name=\"pass\"\r" && !passwordfound)
+                                    passwordindex++;
+                                else
+                                    passwordfound = true;
+                            }
+                            score = _loginContent[scoreindex+2].Replace("\r", "");
+                            iv = _loginContent[ivindex+ 2].Replace("\r", "");
+                            decryptedScore = AES._AESDecrypt(score,  iv);
+                            Submit toSubmit = new Submit(score, iv);
+                            toSubmit.SubmitScore();
+                            break; 
 #endif
                         default:
                             ShowMOTD:

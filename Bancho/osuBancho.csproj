@@ -59,16 +59,21 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Bancho.cs" />
+    <Compile Include="Core\Helpers\AES.cs" />
     <Compile Include="Core\Helpers\CanNotAccessBanchoException.cs" />
     <Compile Include="Core\Helpers\Counting.cs" />
     <Compile Include="Core\Helpers\IniParser.cs" />
     <Compile Include="Core\Helpers\GeoUtil.cs" />
     <Compile Include="Core\Helpers\ScoreHelper.cs" />
+    <Compile Include="Core\Scores\Beatmap.cs" />
+    <Compile Include="Core\Scores\BeatmapManager.cs" />
     <Compile Include="Core\Scores\Scores.cs" />
+    <Compile Include="Core\Scores\Submit.cs" />
     <Compile Include="IRC\Channels\Channel.cs" />
     <Compile Include="IRC\Channels\ChannelManager.cs" />
     <Compile Include="Core\Command.cs" />

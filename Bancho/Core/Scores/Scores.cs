@@ -4,7 +4,9 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using osuBancho.Core.Players;
 using osuBancho.Database.Interfaces;
+using osuBancho.Helpers;
 
 namespace osuBancho.Core.Scores
 {
@@ -19,8 +21,9 @@ namespace osuBancho.Core.Scores
         public string _file_md5;
         public int _player_id;
         public int _mode;
+        public string _username;
         public Scores(int beatmapId, string artist, string creator, string source,
-            string title, string version, string file_md5, int player_id, int mode)
+            string title, string version, string file_md5, int player_id, int mode, string username)
         {
             _beatmapId = beatmapId;
             _artist = artist;
@@ -31,6 +34,7 @@ namespace osuBancho.Core.Scores
             _file_md5 = file_md5;
             _player_id = player_id;
             _mode = mode;
+            _username = username;
         }
 
         public Scores(Scores score)
@@ -44,6 +48,7 @@ namespace osuBancho.Core.Scores
             _file_md5 = score._file_md5;
             _player_id = score._player_id;
             _mode = score._mode;
+            _username = score._username;
         }
         public bool isMapInDatabase()
         {
@@ -67,38 +72,46 @@ namespace osuBancho.Core.Scores
         {
             string query =
                 "INSERT INTO `beatmaps_info`(`approved`, `approved_date`, `last_update`, `set_id`, `artist`, `creator`, `source`, `title`, `version`, `file_md5`) " +
-                "VALUES (2,\"0000-00-00\",\"0000-00-00\"," + _beatmapId + ",\"" + _artist + "\",\"" + _creator + "\",\"\",\"" + _title + "\",\"" + _version + "\",\"" + _file_md5 + "\")";
+                $"VALUES (2,\"{DateTime.Now.ToString("yyyy-MM-dd")}\",\"{DateTime.Now.ToString("yyyy-MM-dd")}\"," + _beatmapId + ",\"" + _artist + "\",\"" + _creator + "\",\"\",\"" + _title + "\",\"" + _version + "\",\"" + _file_md5 + "\")";
             using (IQueryAdapter dbClient = Bancho.DatabaseManager.GetQueryReactor())
             {
                 dbClient.RunQuery(query);
             }
         }
-
+        public List<string> AllTheScores = new List<string>(); 
         public void getScores()
         {
-            bool isPersonalScore = (_player_id != 0) ? true : false;
-            if (!isPersonalScore)
+            int i = 0;
+            if (isMapInDatabase())
             {
                 DataRow scoreDataRow;
                 using (IQueryAdapter dbClient = Bancho.DatabaseManager.GetQueryReactor())
                 {
+                    BeatmapManager.GetAllBeatmaps();
                     dbClient.SetQuery(
-                        "SELECT * FROM users_scores_info WHERE beatmap_id = :beatmap AND playMode = :mode ORDER BY total_score DESC");
-                    dbClient.AddParameter(":beatmap", _beatmapId);
-                    dbClient.AddParameter(":mode", _mode);
-                    scoreDataRow = dbClient.getRow();
-                }
-            }
-            else
-            {
-                DataRow scoreDataRow;
-                using (IQueryAdapter dbClient = Bancho.DatabaseManager.GetQueryReactor())
-                {
-                    dbClient.SetQuery("SELECT * FROM users_scores_info WHERE beatmap_id = :beatmap AND user_id = :playerid AND playMode = :mode ORDER BY total_score DESC LIMIT 1");
-                    dbClient.AddParameter(":beatmap", _beatmapId);
-                    dbClient.AddParameter(":mode", _mode);
-                    dbClient.AddParameter(":playerid", _player_id);
-                    scoreDataRow = dbClient.getRow();
+                        "SELECT * FROM users_scores_info WHERE beatmap_id = @beatmap AND playMode = @mode ORDER BY total_score DESC");
+                    dbClient.AddParameter("beatmap", BeatmapManager.GetBeatmapByHash(_file_md5).id);
+                    dbClient.AddParameter("mode", _mode);
+                    foreach (DataRow row in dbClient.getTable().Rows)
+                    {
+                        string ScoreString = ScoreHelper.makeScoreString(0,
+                            row["username"].ToString(),
+                            Convert.ToInt32(row["total_score"]),
+                            Convert.ToInt32(row["maxcombo"]),
+                            Convert.ToInt32(row["count50"]),
+                            Convert.ToInt32(row["count100"]),
+                            Convert.ToInt32(row["count300"]),
+                            Convert.ToInt32(row["countmiss"]),
+                            Convert.ToInt32(row["countkatu"]),
+                            Convert.ToInt32(row["countgeki"]),
+                            Convert.ToInt32(row["perfect"]),
+                            Convert.ToInt32(row["enabled_mods"]),
+                            PlayerManager.GetPlayerByUsername(row["username"].ToString()).Id,
+                            i,
+                            row["date"].ToString());
+                        AllTheScores.Add(ScoreString);
+                        i++;
+                    }
                 }
             }
         }

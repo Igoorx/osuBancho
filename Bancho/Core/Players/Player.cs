@@ -5,6 +5,7 @@ using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using osuBancho.Core.Helpers;
 using osuBancho.Core.Lobby;
 using osuBancho.Core.Lobby.Matches;
 using osuBancho.Core.Serializables;

@@ -12,6 +12,7 @@ using osuBancho.Database.Interfaces;
 using osuBancho.Helpers;
 using osuBancho.HTTP;
 using osuBancho.Core;
+using osuBancho.Core.Helpers;
 
 namespace osuBancho
 {
