@@ -206,7 +206,7 @@ namespace osuBancho.HTTP
                             title = title.Substring(0, title.Length - 1);
                             string version /*difficulty*/ = query["f"].Split('[')[Counting.Count(query["f"], "[")].Split(']')[0];
                             string fileMd5 = query["c"];
-                            var deezNuts = new Scores(beatmapId, artist, creator, "", title, version, fileMd5, 0, 0, query["us"]);
+                            var deezNuts = new Scores(beatmapId, artist, creator, "", title, version, fileMd5, 0, Convert.ToInt32(query["m"]), query["us"]);
                             deezNuts.getScores();
 
 
