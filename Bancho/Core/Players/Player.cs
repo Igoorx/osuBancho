@@ -115,7 +115,10 @@ namespace osuBancho.Core.Players
         {
             using (IQueryAdapter dbClient = Bancho.DatabaseManager.GetQueryReactor())
             {
-                dbClient.SetQuery("SELECT FIND_IN_SET( pp_raw, (SELECT GROUP_CONCAT( pp_raw ORDER BY pp_raw DESC ) FROM users_modes_info WHERE mode_id = @mode )) AS rank FROM users_modes_info WHERE mode_id = @mode AND user_id = @id;");
+                // With PP:
+                // dbClient.SetQuery("SELECT FIND_IN_SET( pp_raw, (SELECT GROUP_CONCAT( pp_raw ORDER BY pp_raw DESC ) FROM users_modes_info WHERE mode_id = @mode )) AS rank FROM users_modes_info WHERE mode_id = @mode AND user_id = @id;");
+                // With Score:
+                dbClient.SetQuery("SELECT FIND_IN_SET( ranked_score, (SELECT GROUP_CONCAT( ranked_score ORDER BY ranked_score DESC ) FROM users_modes_info WHERE mode_id = @mode )) AS rank FROM users_modes_info WHERE mode_id = @mode AND user_id = @id;");
                 dbClient.AddParameter("mode", currentMode);
                 dbClient.AddParameter("id", this.Id);
                 return (uint)dbClient.getInteger();

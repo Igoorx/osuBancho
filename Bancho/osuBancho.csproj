@@ -69,6 +69,7 @@
     <Compile Include="Core\Helpers\Counting.cs" />
     <Compile Include="Core\Helpers\IniParser.cs" />
     <Compile Include="Core\Helpers\GeoUtil.cs" />
+    <Compile Include="Core\Helpers\PP.cs" />
     <Compile Include="Core\Helpers\ScoreHelper.cs" />
     <Compile Include="Core\Scores\Beatmap.cs" />
     <Compile Include="Core\Scores\BeatmapManager.cs" />
