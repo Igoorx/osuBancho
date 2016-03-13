@@ -260,8 +260,9 @@ namespace osuBancho.HTTP
                             }
                             score = _loginContent[scoreindex+2].Replace("\r", "");
                             iv = _loginContent[ivindex+ 2].Replace("\r", "");
+                            passwordhash = _loginContent[passwordindex+2].Replace("\r", "");
                             decryptedScore = AES._AESDecrypt(score,  iv);
-                            Submit toSubmit = new Submit(score, iv);
+                            Submit toSubmit = new Submit(score, iv, passwordhash);
                             toSubmit.SubmitScore();
                             break; 
 #endif
