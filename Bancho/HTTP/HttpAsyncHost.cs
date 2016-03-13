@@ -15,6 +15,8 @@ using osuBancho.Core.Helpers;
 using osuBancho.Core.Players;
 using osuBancho.Core.Scores;
 using osuBancho.Helpers;
+// ReSharper disable NotAccessedVariable
+// ReSharper disable InconsistentNaming
 
 namespace osuBancho.HTTP
 {
@@ -206,14 +208,30 @@ namespace osuBancho.HTTP
                             string fileMd5 = query["c"];
                             var deezNuts = new Scores(beatmapId, artist, creator, "", title, version, fileMd5, 0, 0, query["us"]);
                             deezNuts.getScores();
-                            byte[] bytes1 = Encoding.Default.GetBytes($"2|false|648339|{beatmapId}|0\r\n0\r\n[bold:0,size:20]{artist}|{title}\r\n9.28235\r\n");
-                            byte[] bytes2 = Encoding.Default.GetBytes("\n");
-                            outStream.Write(bytes1, 0, bytes1.Length); //Map Related
-                            outStream.Write(bytes2, 0, bytes2.Length); //My Score
-                            byte[] memememememeBytes = Encoding.Default.GetBytes("\n"); //OTher Scores
-                            outStream.Write(memememememeBytes, 0, memememememeBytes.Length);
-                            break;
 
+
+                            //Check for our personal score in the score array
+                            var match = deezNuts.AllTheScores.FirstOrDefault(stringToCheck => stringToCheck.Contains(query["us"]));
+                            //Initialize the score value to be empty
+                            string myScore = "\n";
+                            //If it exists change it to the match
+                            if (match != null)
+                                myScore = match + "\r\n";
+                            //Create the byte array for the map data
+                            byte[] MapData = Encoding.Default.GetBytes($"2|false|648339|{beatmapId}|0\r\n0\r\n[bold:0,size:20]{artist}|{title}\r\n9.28235\r\n");
+                            //Create the byte array for our score
+                            byte[] MyScore = Encoding.Default.GetBytes(myScore);
+                            //Write the map data
+                            outStream.Write(MapData, 0, MapData.Length); //Map Related
+                            //Write our personal score
+                            outStream.Write(MyScore, 0, MyScore.Length); //My Score
+                            //Write every other score
+                            foreach (string s in deezNuts.AllTheScores)
+                            {
+                                byte[] OtherScore = Encoding.Default.GetBytes(s + "\r\n"); //Other Scores
+                                outStream.Write(OtherScore, 0, OtherScore.Length);
+                            }
+                            break;
                         case "/web/osu-submit-modular.php":
                             BeatmapManager.GetAllBeatmaps();
                             string[] _loginContent;

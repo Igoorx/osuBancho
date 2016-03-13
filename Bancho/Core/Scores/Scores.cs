@@ -81,12 +81,12 @@ namespace osuBancho.Core.Scores
         public List<string> AllTheScores = new List<string>(); 
         public void getScores()
         {
-            int i = 0;
             if (isMapInDatabase())
             {
                 DataRow scoreDataRow;
                 using (IQueryAdapter dbClient = Bancho.DatabaseManager.GetQueryReactor())
                 {
+                    int i = 1;
                     BeatmapManager.GetAllBeatmaps();
                     dbClient.SetQuery(
                         "SELECT * FROM users_scores_info WHERE beatmap_id = @beatmap AND playMode = @mode ORDER BY total_score DESC");
@@ -106,7 +106,7 @@ namespace osuBancho.Core.Scores
                             Convert.ToInt32(row["countgeki"]),
                             Convert.ToInt32(row["perfect"]),
                             Convert.ToInt32(row["enabled_mods"]),
-                            PlayerManager.GetPlayerByUsername(row["username"].ToString()).Id,
+                            Convert.ToInt32(row["user_id"]),
                             i,
                             row["date"].ToString());
                         AllTheScores.Add(ScoreString);
