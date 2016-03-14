@@ -269,8 +269,19 @@ namespace osuBancho.HTTP
                             {
                                 int id = Convert.ToInt32(context.Request.Url.AbsolutePath.Replace("/", ""));
                                 string avatar = Directory.GetCurrentDirectory() + @"\avatars\" + id + ".jpg";
-                                byte[] picBytes = File.ReadAllBytes(avatar);
-                                outStream.Write(picBytes, 0 , count: picBytes.Length);
+                                if (File.Exists(avatar))
+                                {
+                                    byte[] picBytes = File.ReadAllBytes(avatar);
+                                    outStream.Write(picBytes, 0, count: picBytes.Length);
+                                    break;
+                                }
+                                else if (File.Exists(Directory.GetCurrentDirectory() + @"\avatars\default.jpg"))
+                                {
+                                    byte[] picBytes = File.ReadAllBytes(Directory.GetCurrentDirectory() + @"\avatars\default.jpg");
+                                    outStream.Write(picBytes, 0, count: picBytes.Length);
+                                    break;
+                                }
+                                break;
                             }
                             ShowMOTD:
                             if (Bancho.MOTD != null)
