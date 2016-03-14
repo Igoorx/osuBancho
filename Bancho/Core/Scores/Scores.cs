@@ -108,7 +108,7 @@ namespace osuBancho.Core.Scores
                             Convert.ToInt32(row["enabled_mods"]),
                             Convert.ToInt32(row["user_id"]),
                             i,
-                            row["date"].ToString());
+                            Convert.ToString(row["date"]));
                         AllTheScores.Add(ScoreString);
                         i++;
                     }

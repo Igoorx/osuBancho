@@ -120,6 +120,7 @@ VALUES(@user_id, @username, @beatmap_id, NULL, @playMode, @count300, @count100, 
                 #region if info isnt null
                 if (Info != null)
                 {
+                    int sscount = 0, scount = 0, acount = 0;
                     dbClient.SetQuery("UPDATE `users_modes_info` SET `count300`= @count300,`count100`= @count100,`count50`= @count50,`countmiss`= @countmiss,`playcount`= @playcount,`total_score`= @totalscore,`ranked_score`= @rankedscore,`pp_rank`= @pprank,`pp_raw`= @ppraw,`count_rank_ss`= @sscount,`count_rank_s`= @scount,`count_rank_a`=@acount,`pp_country_rank`= @countryrank WHERE `user_id`= @userid");
                     dbClient.AddParameter("count300", Convert.ToInt32(Info["count300"]) + count300);
                     dbClient.AddParameter("count100", Convert.ToInt32(Info["count100"]) + count100);
@@ -130,27 +131,27 @@ VALUES(@user_id, @username, @beatmap_id, NULL, @playMode, @count300, @count100, 
                     dbClient.AddParameter("rankedscore", Convert.ToInt32(Info["ranked_score"]) + score);
                     dbClient.AddParameter("pprank", Convert.ToInt32(Info["pp_rank"]) + 0);
                     dbClient.AddParameter("ppraw", Convert.ToInt32(Info["pp_raw"]) + 0);
-                    dbClient.AddParameter("sscount", Convert.ToInt32(Info["count_rank_ss"]) + 0);
-                    dbClient.AddParameter("scount", Convert.ToInt32(Info["count_rank_s"]) + 0);
-                    dbClient.AddParameter("acount", Convert.ToInt32(Info["count_rank_a"]) + 0);
                     if (countMiss == 0 && count50 == 0 && count100 == 0 && count300 != 0)
                     {
-                        dbClient.AddParameter("sscount", Convert.ToInt32(Info["count_rank_ss"]) + 1);
-                        dbClient.AddParameter("scount", Convert.ToInt32(Info["count_rank_s"]) + 0);
-                        dbClient.AddParameter("acount", Convert.ToInt32(Info["count_rank_a"]) + 0);
+                        sscount = Convert.ToInt32(Info["count_rank_ss"]) + 1;
+                        scount = Convert.ToInt32(Info["count_rank_s"]) + 0;
+                        acount = Convert.ToInt32(Info["count_rank_a"]) + 0;
                     }
                     else if (countMiss == 0 && Utils.CalcAccuracy((uint) countMiss, (uint) count50, (uint) count100, (uint) count300) >= 95)
                     {
-                        dbClient.AddParameter("sscount", Convert.ToInt32(Info["count_rank_ss"]) + 0);
-                        dbClient.AddParameter("scount", Convert.ToInt32(Info["count_rank_s"]) + 1);
-                        dbClient.AddParameter("acount", Convert.ToInt32(Info["count_rank_a"]) + 0);
+                        sscount =  Convert.ToInt32(Info["count_rank_ss"]) + 0;
+                        scount = Convert.ToInt32(Info["count_rank_s"]) + 1;
+                        acount = Convert.ToInt32(Info["count_rank_a"]) + 0;
                     }
                     else if (Utils.CalcAccuracy((uint) countMiss, (uint) count50, (uint) count100, (uint) count300) >= 90)
                     {
-                        dbClient.AddParameter("sscount", Convert.ToInt32(Info["count_rank_ss"]) + 0);
-                        dbClient.AddParameter("scount", Convert.ToInt32(Info["count_rank_s"]) + 0);
-                        dbClient.AddParameter("acount", Convert.ToInt32(Info["count_rank_a"]) + 1);
+                        sscount = Convert.ToInt32(Info["count_rank_ss"]) + 0;
+                        scount = Convert.ToInt32(Info["count_rank_s"]) + 0;
+                        acount = Convert.ToInt32(Info["count_rank_a"]) + 1;
                     }
+                    dbClient.AddParameter("sscount", sscount);
+                    dbClient.AddParameter("scount", scount);
+                    dbClient.AddParameter("acount", acount);
                     dbClient.AddParameter("countryrank", Convert.ToInt32(Info["pp_country_rank"]) + 0);
                     dbClient.AddParameter("userid", PlayerManager.GetPlayerByUsername(username).Id);
                     dbClient.RunQuery();
@@ -160,6 +161,7 @@ VALUES(@user_id, @username, @beatmap_id, NULL, @playMode, @count300, @count100, 
                 #region if it is null
                 else
                 {
+                    int sscount = 0, scount = 0, acount = 0;
                     dbClient.SetQuery("INSERT INTO `users_modes_info`(`user_id`, `mode_id`, `count300`, `count100`, `count50`, `countmiss`, `playcount`, `total_score`, `ranked_score`, `pp_rank`, `pp_raw`, `count_rank_ss`, `count_rank_s`, `count_rank_a`, `pp_country_rank`) VALUES " +
                                       "(@userid,@modeid,@count300,@count100,@count50,@countMiss,@playcount,@totalscore,@rankedscore,@pprank,@ppraw,@sscount,@scount,@acount,@countryrank)");
                     dbClient.AddParameter("userid", PlayerManager.GetPlayerByUsername(username).Id);
@@ -174,27 +176,27 @@ VALUES(@user_id, @username, @beatmap_id, NULL, @playMode, @count300, @count100, 
                     dbClient.AddParameter("rankedscore", score);
                     dbClient.AddParameter("pprank", 0);
                     dbClient.AddParameter("ppraw", 0);
-                    dbClient.AddParameter("sscount", 0);
-                    dbClient.AddParameter("scount", 0);
-                    dbClient.AddParameter("acount", 0);
                     if (countMiss == 0 && count50 == 0 && count100 == 0 && count300 != 0)
                     {
-                        dbClient.AddParameter("sscount", 1);
-                        dbClient.AddParameter("scount", 0);
-                        dbClient.AddParameter("acount", 0);
+                        sscount =  1;
+                        scount = 0;
+                        acount = 0;
                     }
                     else if (countMiss == 0 && Utils.CalcAccuracy((uint)countMiss, (uint)count50, (uint)count100, (uint)count300) >= 95)
                     {
-                        dbClient.AddParameter("sscount", 0);
-                        dbClient.AddParameter("scount", 1);
-                        dbClient.AddParameter("acount", 0);
+                        sscount = 0;
+                        scount = 1;
+                        acount = 0;
                     }
                     else if (Utils.CalcAccuracy((uint)countMiss, (uint)count50, (uint)count100, (uint)count300) >= 90)
                     {
-                        dbClient.AddParameter("sscount", 0);
-                        dbClient.AddParameter("scount", 0);
-                        dbClient.AddParameter("acount", 1);
+                        sscount = 0;
+                        scount = 0;
+                        acount = 1;
                     }
+                    dbClient.AddParameter("sscount", sscount);
+                    dbClient.AddParameter("scount", scount);
+                    dbClient.AddParameter("acount", acount);
                     dbClient.AddParameter("countryrank", 1);
                     dbClient.RunQuery();
                     //TODO: Implement Userpanel updating

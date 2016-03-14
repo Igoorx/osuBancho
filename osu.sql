@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 13, 2016 at 05:25 PM
+-- Generation Time: Mar 14, 2016 at 07:00 PM
 -- Server version: 5.6.26
 -- PHP Version: 5.5.28
 
@@ -38,10 +38,7 @@ CREATE TABLE IF NOT EXISTS `beatmaps_info` (
   `title` text NOT NULL,
   `version` text NOT NULL,
   `file_md5` varchar(32) NOT NULL
-) ENGINE=InnoDB AUTO_INCREMENT=48 DEFAULT CHARSET=latin1;
-
---
--- Dumping data for table `beatmaps_info`
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -53,10 +50,6 @@ CREATE TABLE IF NOT EXISTS `osu_info` (
   `name` varchar(10) NOT NULL,
   `value` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
---
--- Dumping data for table `osu_info`
---
 
 -- --------------------------------------------------------
 
@@ -76,10 +69,7 @@ CREATE TABLE IF NOT EXISTS `users_info` (
   `online_now` tinyint(1) NOT NULL,
   `tags` int(11) NOT NULL,
   `supporter` tinyint(1) NOT NULL
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
-
---
--- Dumping data for table `users_info`
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -96,8 +86,8 @@ CREATE TABLE IF NOT EXISTS `users_modes_info` (
   `count50` int(10) unsigned NOT NULL,
   `countmiss` int(10) unsigned NOT NULL,
   `playcount` int(10) unsigned NOT NULL,
-  `total_score` int(10) unsigned NOT NULL,
-  `ranked_score` int(11) unsigned NOT NULL,
+  `total_score` bigint(100) unsigned NOT NULL,
+  `ranked_score` bigint(100) unsigned NOT NULL,
   `pp_rank` int(11) NOT NULL,
   `pp_raw` int(11) NOT NULL DEFAULT '1',
   `count_rank_ss` int(10) unsigned NOT NULL,
@@ -145,11 +135,7 @@ CREATE TABLE IF NOT EXISTS `users_scores_info` (
   `date` varchar(11) NOT NULL,
   `rank` varchar(2) NOT NULL,
   `pp` float NOT NULL
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=latin1;
-
---
--- Dumping data for table `users_scores_info`
---
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Indexes for dumped tables
@@ -189,12 +175,12 @@ ALTER TABLE `users_scores_info`
 -- AUTO_INCREMENT for table `beatmaps_info`
 --
 ALTER TABLE `beatmaps_info`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=48;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `users_info`
 --
 ALTER TABLE `users_info`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `users_modes_info`
 --
@@ -204,7 +190,7 @@ ALTER TABLE `users_modes_info`
 -- AUTO_INCREMENT for table `users_scores_info`
 --
 ALTER TABLE `users_scores_info`
-  MODIFY `score_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=8;
+  MODIFY `score_id` int(11) NOT NULL AUTO_INCREMENT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
