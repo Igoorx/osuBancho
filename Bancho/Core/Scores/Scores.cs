@@ -78,6 +78,20 @@ namespace osuBancho.Core.Scores
                 dbClient.RunQuery(query);
             }
         }
+
+        public string GetUsernameById(int id)
+        {
+            //SELECT * FROM `users_info` WHERE `id`=1 LIMIT 1
+            DataRow userDataRow;
+            using (IQueryAdapter dbClient = Bancho.DatabaseManager.GetQueryReactor())
+            {
+                dbClient.SetQuery("SELECT * FROM users_info WHERE id = @id LIMIT 1");
+                dbClient.AddParameter("id", id);
+                userDataRow = dbClient.getRow();
+            }
+            return (string) userDataRow["username"];
+        }
+
         public List<string> AllTheScores = new List<string>(); 
         public void getScores()
         {
@@ -95,7 +109,7 @@ namespace osuBancho.Core.Scores
                     foreach (DataRow row in dbClient.getTable().Rows)
                     {
                         string ScoreString = ScoreHelper.makeScoreString(0,
-                            row["username"].ToString(),
+                            GetUsernameById(Convert.ToInt32(row["user_id"])),
                             Convert.ToInt32(row["total_score"]),
                             Convert.ToInt32(row["maxcombo"]),
                             Convert.ToInt32(row["count50"]),

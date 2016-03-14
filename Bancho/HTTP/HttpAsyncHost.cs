@@ -10,9 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 using osuBancho.Core;
-using osuBancho.Core.Helpers;
 using osuBancho.Core.Players;
 using osuBancho.Core.Scores;
 using osuBancho.Helpers;
@@ -240,8 +238,7 @@ namespace osuBancho.HTTP
                             {
                                 _loginContent = reader.ReadToEnd().Split('\n');
                             }
-                            string iv, score, decryptedScore, passwordhash;
-                            byte[] decodedIV;
+                            string iv, score, passwordhash;
                             int ivindex = 0, scoreindex = 0, passwordindex = 0;
                             bool ivfound = false, scorefound = false, passwordfound = false;
                             foreach (string s in _loginContent)
@@ -262,7 +259,6 @@ namespace osuBancho.HTTP
                             score = _loginContent[scoreindex+2].Replace("\r", "");
                             iv = _loginContent[ivindex+ 2].Replace("\r", "");
                             passwordhash = _loginContent[passwordindex+2].Replace("\r", "");
-                            decryptedScore = AES._AESDecrypt(score,  iv);
                             Submit toSubmit = new Submit(score, iv, passwordhash);
                             toSubmit.SubmitScore();
                             break;
@@ -275,10 +271,6 @@ namespace osuBancho.HTTP
                                 string avatar = Directory.GetCurrentDirectory() + @"\avatars\" + id + ".jpg";
                                 byte[] picBytes = File.ReadAllBytes(avatar);
                                 outStream.Write(picBytes, 0 , count: picBytes.Length);
-                            }
-                            else
-                            {
-                                goto ShowMOTD;
                             }
                             ShowMOTD:
                             if (Bancho.MOTD != null)

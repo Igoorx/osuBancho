@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using osuBancho.Database.Interfaces;
 using osuBancho.Helpers;
 using osuBancho.IRC.Objects;
+// ReSharper disable InconsistentNaming
 
 namespace osuBancho.Core.Players
 {
