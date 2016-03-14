@@ -7,6 +7,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -264,11 +265,23 @@ namespace osuBancho.HTTP
                             decryptedScore = AES._AESDecrypt(score,  iv);
                             Submit toSubmit = new Submit(score, iv, passwordhash);
                             toSubmit.SubmitScore();
-                            break; 
+                            break;
 #endif
                         default:
+                            Regex regex = new Regex("[0-9]");
+                            if (regex.IsMatch(context.Request.Url.AbsolutePath))
+                            {
+                                int id = Convert.ToInt32(context.Request.Url.AbsolutePath.Replace("/", ""));
+                                string avatar = Directory.GetCurrentDirectory() + @"\avatars\" + id + ".jpg";
+                                byte[] picBytes = File.ReadAllBytes(avatar);
+                                outStream.Write(picBytes, 0 , count: picBytes.Length);
+                            }
+                            else
+                            {
+                                goto ShowMOTD;
+                            }
                             ShowMOTD:
-                            if (Bancho.MOTD!=null)
+                            if (Bancho.MOTD != null)
                                 outStream.Write(buffer: Bancho.MOTD, offset: 0, count: Bancho.MOTD.Length);
                             break;
                     }

@@ -29,7 +29,6 @@ namespace osuBancho.Core.Players
             PlayersByToken.TryGetValue(token, out player);
             return player;
         }
-
         public static Player GetPlayerById(int id)
         {
             Player player;
