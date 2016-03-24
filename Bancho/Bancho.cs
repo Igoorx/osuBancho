@@ -56,25 +56,6 @@ namespace osuBancho
 
             GeoUtil.Initialize();
 
-            workerTimer = new Timer(
-                (state) =>
-                {
-                    foreach (Player player in PlayerManager.Players
-                        .Where(player => (Environment.TickCount - player.LastPacketTime) >= 80000))
-                    {
-                        PlayerManager.DisconnectPlayer(player, DisconnectReason.Timeout);
-                    }
-                    try
-                    {
-                        UpdateOnlineNow();
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.WriteLine("Can't update onlines now: "+e.Message);
-                    }
-                },
-                null, 0, 15000);
-
             if (!File.Exists("config.ini"))
                 File.WriteAllText("config.ini", IniFile.DefaultIni);
 
@@ -109,6 +90,25 @@ namespace osuBancho
                 Console.ReadKey(true);
                 Environment.Exit(1);
             }
+
+            workerTimer = new Timer(
+                (state) =>
+                {
+                    foreach (Player player in PlayerManager.Players
+                        .Where(player => (Environment.TickCount - player.LastPacketTime) >= 80000))
+                    {
+                        PlayerManager.DisconnectPlayer(player, DisconnectReason.Timeout);
+                    }
+                    try
+                    {
+                        UpdateOnlineNow();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.WriteLine("Can't update onlines_now: " + e.Message);
+                    }
+                },
+                null, 0, 15000);
 
 #if DEBUG
             Debug.Listeners.Add(new ConsoleTraceListener());

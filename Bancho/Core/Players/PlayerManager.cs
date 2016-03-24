@@ -43,8 +43,6 @@ namespace osuBancho.Core.Players
             return Players.FirstOrDefault(player => player.Username == username);
         }
 
-        //TODO?: do worker things on a threaded OnCycle method, to kill zombies and update others things like onlines now (or onlines now is better in a separated worker thread?)
-
         public static void QueueCommandForAll(Commands command, object serializable)
         {
             foreach (Player player in Players)
@@ -73,7 +71,7 @@ namespace osuBancho.Core.Players
                                   "password = @password LIMIT 1");
 
                 dbClient.AddParameter("name", username);
-                dbClient.AddParameter("password", passHash); //TODO: if is from irc, check the irc password
+                dbClient.AddParameter("password", passHash);
                 playerData = dbClient.getRow();
             }
             if (playerData == null)
@@ -108,7 +106,7 @@ namespace osuBancho.Core.Players
             if (PlayersByToken.TryAdd(player.Token, player))
                 QueueCommandForAll(Commands.OUT_IrcMessage,
                     new bIRCMessage("BanchoBot", "#broadcast", $"New session: {player.Token}") {SenderId = 3});
-            //NOTE: Test message
+                //NOTE: This is a test message, remove later
 
             return true;
         }
@@ -118,9 +116,11 @@ namespace osuBancho.Core.Players
             Player player;
             if (!PlayersById.TryRemove(playerId, out player)) return;
             if (PlayersByToken.TryRemove(player.Token, out player))
-                QueueCommandForAll(Commands.OUT_IrcMessage, new bIRCMessage("BanchoBot", "#broadcast", $"Destroyed session: {player.Token}") { SenderId = 3 }); //NOTE: Test message
+                QueueCommandForAll(Commands.OUT_IrcMessage, new bIRCMessage("BanchoBot", "#broadcast", $"Destroyed session: {player.Token}") { SenderId = 3 }); 
+                //NOTE: This is a test message, remove later
 
             player.Dispose();
+
             //NOTE: Improve this?
             QueueCommandForAll(Commands.OUT_UserQuit, new bIRCQuit(playerId, bIRCQuit.Enum1.const_0));
 
@@ -136,6 +136,7 @@ namespace osuBancho.Core.Players
             if (PlayersById.TryRemove(player.Id, out player))
             {
                 player.Dispose();
+
                 //NOTE: Improve this?
                 QueueCommandForAll(Commands.OUT_UserQuit, new bIRCQuit(player.Id, bIRCQuit.Enum1.const_0));
             }

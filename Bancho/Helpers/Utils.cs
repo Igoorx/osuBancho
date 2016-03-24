@@ -9,6 +9,9 @@ namespace osuBancho.Helpers
             return (float)((double)((count50 * 50)+(count100 * 100)+(count300 * 300)) / (double)((count50 + count100 + count300 + countMiss) * 300));
         }
 
+        /// <summary>
+        /// Return a MD5 hash of a string
+        /// </summary>
         public static string HashString(string input)
         {
             // Use input string to calculate MD5 hash
