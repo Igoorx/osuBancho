@@ -9,6 +9,24 @@ namespace osuBancho.Helpers
             return (float)((double)((count50 * 50)+(count100 * 100)+(count300 * 300)) / (double)((count50 + count100 + count300 + countMiss) * 300));
         }
 
+        public static string HashString(string input)
+        {
+            // Use input string to calculate MD5 hash
+            using (System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create())
+            {
+                byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(input);
+                byte[] hashBytes = md5.ComputeHash(inputBytes);
+
+                // Convert the byte array to hexadecimal string
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < hashBytes.Length; i++)
+                {
+                    sb.Append(hashBytes[i].ToString("X2"));
+                }
+                return sb.ToString();
+            }
+        }
+
         /// <summary>
         /// Return a string containing a printable representation of an byte array
         /// </summary>

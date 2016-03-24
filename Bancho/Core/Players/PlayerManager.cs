@@ -6,9 +6,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using osuBancho.Core.Serializables.IRC;
 using osuBancho.Database.Interfaces;
 using osuBancho.Helpers;
-using osuBancho.IRC.Objects;
+using osuBancho.Hosts.IRC;
 
 namespace osuBancho.Core.Players
 {
@@ -16,7 +17,7 @@ namespace osuBancho.Core.Players
     {
         private static readonly ConcurrentDictionary<string, Player> PlayersByToken = new ConcurrentDictionary<string, Player>();
         private static readonly ConcurrentDictionary<int, Player> PlayersById = new ConcurrentDictionary<int, Player>();
-
+        
         public static IEnumerable<int> PlayersIds => PlayersById.Select(item => item.Key);
 
         public static IEnumerable<Player> Players => PlayersById.Select(item => item.Value);
@@ -72,7 +73,7 @@ namespace osuBancho.Core.Players
                                   "password = @password LIMIT 1");
 
                 dbClient.AddParameter("name", username);
-                dbClient.AddParameter("password", passHash);
+                dbClient.AddParameter("password", passHash); //TODO: if is from irc, check the irc password
                 playerData = dbClient.getRow();
             }
             if (playerData == null)
@@ -100,11 +101,15 @@ namespace osuBancho.Core.Players
             else
             {
                 //TODO: Improve this?
-                QueueCommandForAll(Commands.OUT_UserForLoad, player.Id, player.Id); //NOTE: Osu automatic logout when see that an user with same id has logged in
+                QueueCommandForAll(Commands.OUT_UserForLoad, player.Id, player.Id);
+                //NOTE: Osu automatic logout when see that an user with same id has logged in
             }
 
             if (PlayersByToken.TryAdd(player.Token, player))
-                QueueCommandForAll(Commands.OUT_IrcMessage, new bIRCMessage("BanchoBot", "#broadcast", $"New session: {player.Token}") { SenderId = 3 }); //NOTE: Test message
+                QueueCommandForAll(Commands.OUT_IrcMessage,
+                    new bIRCMessage("BanchoBot", "#broadcast", $"New session: {player.Token}") {SenderId = 3});
+            //NOTE: Test message
+
             return true;
         }
 
@@ -115,7 +120,7 @@ namespace osuBancho.Core.Players
             if (PlayersByToken.TryRemove(player.Token, out player))
                 QueueCommandForAll(Commands.OUT_IrcMessage, new bIRCMessage("BanchoBot", "#broadcast", $"Destroyed session: {player.Token}") { SenderId = 3 }); //NOTE: Test message
 
-            player.OnDisconnected();
+            player.Dispose();
             //NOTE: Improve this?
             QueueCommandForAll(Commands.OUT_UserQuit, new bIRCQuit(playerId, bIRCQuit.Enum1.const_0));
 
@@ -130,7 +135,7 @@ namespace osuBancho.Core.Players
 
             if (PlayersById.TryRemove(player.Id, out player))
             {
-                player.OnDisconnected();
+                player.Dispose();
                 //NOTE: Improve this?
                 QueueCommandForAll(Commands.OUT_UserQuit, new bIRCQuit(player.Id, bIRCQuit.Enum1.const_0));
             }
@@ -138,7 +143,7 @@ namespace osuBancho.Core.Players
             Debug.WriteLine("{0} has disconnected ({1})", player?.Username, reason);
         }
 
-        public static async Task<bool> OnPacketReceived(string Token, Stream receivedStream, MemoryStream outStream)
+        /*public static async Task<bool> OnPacketReceived(string Token, Stream receivedStream, MemoryStream outStream)
         {
             if (receivedStream.Length < 7)
                 return false;
@@ -152,6 +157,6 @@ namespace osuBancho.Core.Players
             player.SerializeCommands(outStream);
                 
             return true;
-        }
+        }*/
     }
 }

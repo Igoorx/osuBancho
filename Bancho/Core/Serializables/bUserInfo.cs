@@ -6,18 +6,18 @@ namespace osuBancho.Core.Serializables
     internal sealed class bUserInfo : bSerializable
     {
         public readonly UserTags Tags;
-        public bool NotNegativeId;
+        public bool IsValidId;
         public byte CountryID;
         public float Longitude;
         public float Latitude;
         public int ID;
-        public int idk;
+        public int GlobalRank;
         public string Name;
         public PlayModes PlayMode;
         public int TimeZone;
 
         public bUserInfo(int ID, string Name, int TimeZone, byte CountryID, UserTags Tags, PlayModes PlayMode,
-            float Longitude, float Latitude, int idk)
+            float Longitude, float Latitude, int GlobalRank)
         {
             this.ID = ID;
             if (this.ID < 0)
@@ -26,7 +26,7 @@ namespace osuBancho.Core.Serializables
             }
             else
             {
-                NotNegativeId = (this.ID != 0);
+                IsValidId = (this.ID != 0);
             }
             this.Name = Name;
             this.TimeZone = TimeZone;
@@ -35,7 +35,7 @@ namespace osuBancho.Core.Serializables
             this.PlayMode = PlayMode;
             this.Longitude = Longitude;
             this.Latitude = Latitude;
-            this.idk = idk;
+            this.GlobalRank = GlobalRank; //NOTE: It can not be this
         }
 
         public bUserInfo(SerializationReader r)
@@ -47,7 +47,7 @@ namespace osuBancho.Core.Serializables
             }
             else
             {
-                NotNegativeId = (ID != 0);
+                IsValidId = (ID != 0);
             }
             Name = r.ReadString();
             TimeZone = r.ReadByte() - 24;
@@ -57,7 +57,7 @@ namespace osuBancho.Core.Serializables
             PlayMode = (PlayModes) Math.Max(0, Math.Min(3, (b & 224) >> 5));
             Longitude = r.ReadSingle();
             Latitude = r.ReadSingle();
-            idk = r.ReadInt32();
+            GlobalRank = r.ReadInt32();
         }
 
         public void ReadFromStream(SerializationReader reader)
@@ -67,14 +67,14 @@ namespace osuBancho.Core.Serializables
 
         public void WriteToStream(SerializationWriter writer)
         {
-            writer.Write(NotNegativeId ? ID : (-ID));
+            writer.Write(IsValidId ? ID : (-ID));
             writer.Write(Name);
             writer.Write((byte) (TimeZone + 24));
             writer.Write(CountryID);
             writer.Write((byte) ((byte) Tags | (byte) PlayMode << 5));
             writer.Write(Longitude);
             writer.Write(Latitude);
-            writer.Write(idk);
+            writer.Write(GlobalRank);
         }
     }
 }

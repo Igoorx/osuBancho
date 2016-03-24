@@ -10,8 +10,9 @@ using osuBancho.Core.Players;
 using osuBancho.Database;
 using osuBancho.Database.Interfaces;
 using osuBancho.Helpers;
-using osuBancho.HTTP;
 using osuBancho.Core;
+using osuBancho.Hosts.HTTP;
+using osuBancho.Hosts.IRC;
 
 namespace osuBancho
 {
@@ -27,6 +28,8 @@ namespace osuBancho
         public static bool IsRestricted;
         public static CultureInfo CultureInfo;
         public static DateTime ServerStarted;
+
+        public static IrcManager irc;
 
         private static Timer workerTimer;
 
@@ -52,6 +55,25 @@ namespace osuBancho
             Console.Title = (IsDebug?"[DEBUG] ":"") + "osu!Bancho";
 
             GeoUtil.Initialize();
+
+            workerTimer = new Timer(
+                (state) =>
+                {
+                    foreach (Player player in PlayerManager.Players
+                        .Where(player => (Environment.TickCount - player.LastPacketTime) >= 80000))
+                    {
+                        PlayerManager.DisconnectPlayer(player, DisconnectReason.Timeout);
+                    }
+                    try
+                    {
+                        UpdateOnlineNow();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.WriteLine("Can't update onlines now: "+e.Message);
+                    }
+                },
+                null, 0, 15000);
 
             if (!File.Exists("config.ini"))
                 File.WriteAllText("config.ini", IniFile.DefaultIni);
@@ -88,21 +110,14 @@ namespace osuBancho
                 Environment.Exit(1);
             }
 
-            workerTimer = new Timer(
-                (state) =>
-                    {
-                        foreach (Player player in PlayerManager.Players
-                            .Where(player => (Environment.TickCount - player.LastPacketTime) >= 80000))
-                        {
-                            PlayerManager.DisconnectPlayer(player, DisconnectReason.Timeout);
-                        }
-                        UpdateOnlineNow();
-                    },
-                null, 0, 15000);
-
 #if DEBUG
             Debug.Listeners.Add(new ConsoleTraceListener());
 #endif
+
+            Console.WriteLine("Initializing IRC..");
+
+            irc = new IrcManager();
+            irc.Start();
             
             var port = ini.GetValue("Bancho", "Port", 80);
             Console.WriteLine($"Initializing HTTP in port {port.ToString()}..");

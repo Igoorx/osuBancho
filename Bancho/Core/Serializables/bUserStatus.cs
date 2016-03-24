@@ -7,20 +7,20 @@ namespace osuBancho.Core.Serializables
     {
         public string beatmap;
         public string beatmapHash;
-        public int idk;
+        public int beatmapId;
         public Mods mods;
         public PlayModes playMode;
         public bStatus status;
 
         public bUserStatus(bStatus status, string beatmapHash, string beatmap, Mods mods, PlayModes playMode,
-            int idk)
+            int beatmapId)
         {
             this.status = status;
             this.beatmap = beatmap;
             this.beatmapHash = beatmapHash;
             this.mods = mods;
             this.playMode = playMode;
-            this.idk = idk;
+            this.beatmapId = beatmapId;
         }
 
         public bUserStatus(SerializationReader reader)
@@ -37,7 +37,7 @@ namespace osuBancho.Core.Serializables
                 mods = (Mods) reader.ReadInt16();
             }
             playMode = (PlayModes) Math.Max((byte) 0, Math.Min((byte) 3, reader.ReadByte()));
-            idk = reader.ReadInt32();
+            beatmapId = reader.ReadInt32();
         }
 
         public void ReadFromStream(SerializationReader reader)
@@ -52,7 +52,7 @@ namespace osuBancho.Core.Serializables
             writer.Write(beatmap);
             writer.Write((uint) mods);
             writer.Write((byte) playMode);
-            writer.Write(idk);
+            writer.Write(beatmapId);
         }
     }
 }

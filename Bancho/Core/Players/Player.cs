@@ -9,14 +9,15 @@ using System.Linq;
 using osuBancho.Core.Lobby;
 using osuBancho.Core.Lobby.Matches;
 using osuBancho.Core.Serializables;
+using osuBancho.Core.Serializables.IRC;
 using osuBancho.Database.Interfaces;
 using osuBancho.Helpers;
-using osuBancho.IRC.Objects;
+using osuBancho.Hosts.IRC;
 
 namespace osuBancho.Core.Players
 {
     [DebuggerDisplay("Id = {Id}, Username = {Username}")]
-    class Player
+    class Player: BaseIrcSession
     {
         internal readonly ConcurrentQueue<Command> CommandQueue = new ConcurrentQueue<Command>();
         public readonly string Token;
@@ -55,15 +56,6 @@ namespace osuBancho.Core.Players
             currentMode = (PlayModes)(sbyte)dbRow["last_played_mode"];
         }
 
-        public bool IrcPlayer;
-        public Player(DataRow dbRow)
-        {
-            Id = (int)dbRow["id"];
-            Username = (string)dbRow["username"];
-            Tags = (UserTags)(int)dbRow["tags"];
-            IrcPlayer = true;
-        }
-
         public void QueueCommand(Commands command, object serializable)
         {
             CommandQueue.Enqueue(new Command(command, serializable));
@@ -74,7 +66,7 @@ namespace osuBancho.Core.Players
             CommandQueue.Enqueue(new Command(command, null));
         }
 
-        public void QueueCommands(Command[] commands)
+        public void QueueCommand(params Command[] commands)
         {
             foreach (Command command in commands)
             {
@@ -189,6 +181,7 @@ namespace osuBancho.Core.Players
                 cspectator.QueueCommand(Commands.OUT_FellowSpectatorJoined, spectator.Id);
             }
             QueueCommand(Commands.OUT_SpectatorJoined, spectator.Id);
+            //TODO: Spectator has map and is this the best way to do this?
         }
 
         public void RemoveSpectator(int spectatorId)
@@ -228,7 +221,7 @@ namespace osuBancho.Core.Players
         }
 
 
-        public void OnLoggedIn()
+        public void Initialize()
         {
             LastPacketTime = Environment.TickCount;
 
@@ -236,7 +229,7 @@ namespace osuBancho.Core.Players
             if (geoData != null)
             {
                 this.CountryId = GeoUtil.GetCountryId(geoData["country"]["names"]["en"].ToString());
-                this.Language = CultureInfo //NOTE: This can be used to an translation ..
+                this.Language = CultureInfo
                     .GetCultures(CultureTypes.AllCultures)
                     .First(c => c.Name.EndsWith(geoData["country"]["iso_code"].ToString()))
                     .Name;
@@ -247,8 +240,7 @@ namespace osuBancho.Core.Players
             Status = new bUserStatus(bStatus.Idle, "", "", Mods.None, this.currentMode, 0);
             this.GetModesData();
 
-            QueueCommands(new[]
-            {
+            QueueCommand(
                 new Command(Commands.OUT_ChoProtocol, Bancho.Protocol), //TODO: Is boxing good? idk..
                 new Command(Commands.OUT_LoginResult, this.Id),
                 new Command(Commands.OUT_UserTags, (int)this.Tags),
@@ -256,11 +248,11 @@ namespace osuBancho.Core.Players
                 new Command(Commands.OUT_Announcement,
                     "http://puu.sh/jh7t7/20c04029ad.png|https://osu.ppy.sh/news/123912240253"),
                 new Command(Commands.OUT_UpdateUserInfo,
-                    new bUserInfo(this.Id, this.Username, this.TimeZone, (byte)this.CountryId, UserTags.Player, PlayModes.Osu, this.Longitude, this.Latitude, 1)),
+                    new bUserInfo(this.Id, this.Username, this.TimeZone, (byte)this.CountryId, UserTags.Player, PlayModes.Osu, this.Longitude, this.Latitude, 1)), //Yes, idk what is this "1"
                 new Command(Commands.OUT_UpdateUserState, this.SerializableStats),
                 new Command(Commands.OUT_UpdateUserInfo,
                     new bUserInfo(-3, "BanchoBot", 0, 0, UserTags.None, PlayModes.Osu, 0, 0, 0))
-            });
+            );
 
             QueueCommand(Commands.OUT_ChannelJoinSuccess, "#osu");
             QueueCommand(Commands.OUT_ChannelJoinSuccess, "#broadcast");
@@ -271,14 +263,14 @@ namespace osuBancho.Core.Players
                 new bIRCMessage("BanchoBot", "#osu", "Welcome to the Bancho!") {SenderId = 3}); //NOTE: This is a test message
         }
 
-        public void OnDisconnected()
+        public void Dispose()
         {
             this.Spectating?.RemoveSpectator(this.Id);
             this.currentMatch?.RemovePlayer(this.Id);
             LobbyManager.ExitLobby(this.Id);
         }
 
-        public void OnPacketReceived(Stream receivedStream)
+        public void HandleRawPacket(MemoryStream receivedStream)
         {
             this.LastPacketTime = Environment.TickCount;
 
@@ -552,5 +544,6 @@ namespace osuBancho.Core.Players
                 }
             }
         }
+        
     }
 }
