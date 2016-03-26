@@ -18,6 +18,7 @@ To access the Bancho you need insert the following lines in your [hosts](https:/
 127.0.0.1 osu.ppy.sh
 127.0.0.1 c.ppy.sh
 127.0.0.1 c1.ppy.sh
+```
 
 ## Thanks
 - [Aardwolf Rep](https://github.com/JamesDunne/aardwolf) for a part of HttpHost
