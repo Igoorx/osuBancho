@@ -1,3 +1,7 @@
+## THIS PROJECT IS NOW ARCHIVED
+I decided to archive this project since it wasn't maintained and it's really outdated, if you're looking for a bancho emulator [I recommend you to search for a newer and maintained one on github](https://github.com/search?o=desc&q=osu+bancho&s=updated&type=Repositories) :)
+
+
 # osuBancho [![AGPL V3 Licence](https://img.shields.io/badge/license-AGPL%20V3-blue.svg)](LICENCE)
 An osu!Bancho server written in C# for fun and educational purposes.
 
